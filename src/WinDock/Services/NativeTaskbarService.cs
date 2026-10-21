@@ -118,13 +118,13 @@ public sealed class NativeTaskbarService : INativeTaskbarService
                     }
                 }
 
-                // Immediately release bottom taskbar area by expanding work area to full display
+                // Reserve 48px for WinDock so normal maximized windows stay within (0, 0, screenWidth, screenHeight - 48)
                 var fullArea = new Win32Interop.RECT
                 {
                     left = 0,
                     top = 0,
                     right = screenWidth,
-                    bottom = screenHeight
+                    bottom = screenHeight - 48
                 };
 
                 SystemParametersInfo(SPI_SETWORKAREA, 0, ref fullArea, SPIF_SENDCHANGE);

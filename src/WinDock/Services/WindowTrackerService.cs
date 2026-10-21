@@ -186,15 +186,10 @@ public sealed class WindowTrackerService : IWindowTrackerService
             int screenWidth = Win32Interop.GetSystemMetrics(Win32Interop.SM_CXSCREEN);
             int screenHeight = Win32Interop.GetSystemMetrics(Win32Interop.SM_CYSCREEN);
 
-            int width = rect.right - rect.left;
-            int height = rect.bottom - rect.top;
-
-            if (width >= screenWidth &&
-                height >= screenHeight &&
-                rect.left <= 0 &&
-                rect.top <= 0 &&
-                rect.right >= screenWidth &&
-                rect.bottom >= screenHeight)
+            if (rect.left == 0 &&
+                rect.top == 0 &&
+                rect.right == screenWidth &&
+                rect.bottom == screenHeight)
             {
                 return true;
             }
