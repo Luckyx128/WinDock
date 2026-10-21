@@ -28,13 +28,13 @@ public partial class DesktopWidgetsWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
-        RepositionForBarEdge(_viewModel.CurrentEdge, TaskbarWindow.BarHeightDip);
+        RepositionForBarEdge(_viewModel.CurrentEdge, _viewModel.BarHeightDip);
         PinToDesktopLayer();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        RepositionForBarEdge(_viewModel.CurrentEdge, TaskbarWindow.BarHeightDip);
+        RepositionForBarEdge(_viewModel.CurrentEdge, _viewModel.BarHeightDip);
         PinToDesktopLayer();
     }
 

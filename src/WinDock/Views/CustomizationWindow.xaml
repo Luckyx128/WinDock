@@ -1853,6 +1853,42 @@
                                                 </Button>
                                             </Grid>
 
+                                            <!-- Tamanho da Barra & Escala dos Ícones -->
+                                            <Border Background="{DynamicResource PillBackgroundBrush}"
+                                                    BorderBrush="{DynamicResource BarBorderBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="8"
+                                                    Padding="12,10"
+                                                    Margin="0,4,0,8">
+                                                <StackPanel>
+                                                    <Grid Margin="0,0,0,6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="📏 Tamanho da Dock &amp; Escala" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                            <TextBlock Text=" (arraste a borda ou Ctrl + Scroll)" FontSize="9.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="6,1,0,0" />
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" Text="{Binding BarHeightText}" FontWeight="Bold" Foreground="{DynamicResource AccentColorBrush}" FontSize="11" VerticalAlignment="Center" />
+                                                    </Grid>
+
+                                                    <Slider Minimum="36" Maximum="80"
+                                                            Value="{Binding BarHeightDip, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            TickFrequency="2" IsSnapToTickEnabled="True"
+                                                            Margin="0,2,0,8" />
+
+                                                    <!-- Presets Rápidos -->
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                        <TextBlock Text="Presets:" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                                        <Button Content="Compacto (38px)" Style="{StaticResource CardActionButtonStyle}" Command="{Binding SetBarHeightCommand}" CommandParameter="38" Padding="6,2" Margin="0,0,4,0" FontSize="10" />
+                                                        <Button Content="Padrão (48px)" Style="{StaticResource CardActionButtonStyle}" Command="{Binding SetBarHeightCommand}" CommandParameter="48" Padding="6,2" Margin="0,0,4,0" FontSize="10" />
+                                                        <Button Content="Médio (58px)" Style="{StaticResource CardActionButtonStyle}" Command="{Binding SetBarHeightCommand}" CommandParameter="58" Padding="6,2" Margin="0,0,4,0" FontSize="10" />
+                                                        <Button Content="Grande (68px)" Style="{StaticResource CardActionButtonStyle}" Command="{Binding SetBarHeightCommand}" CommandParameter="68" Padding="6,2" FontSize="10" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
                                             <Grid Margin="0,0,0,6">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />

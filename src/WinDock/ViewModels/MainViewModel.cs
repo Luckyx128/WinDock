@@ -504,8 +504,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private bool _isDisposed;
     private bool _isLoadingCustomizations;
 
+    public const double MinBarHeight = 36.0;
+    public const double MaxBarHeight = 80.0;
+    public const double DefaultBarHeight = 48.0;
+
     private IntPtr _excludeWindowHandle;
     private BarEdge _currentEdge = BarEdge.Bottom;
+    private double _barHeightDip = DefaultBarHeight;
     private bool _areWidgetsVisible = false; // Default clean: widgets OFF on startup
     private bool _isFullscreenActive = false;
 
@@ -598,6 +603,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand MoveWidgetDownCommand { get; }
     public ICommand ApplyThemeCommand { get; }
     public ICommand ApplyAccentCommand { get; }
+    public ICommand SetBarHeightCommand { get; }
 
     public MainViewModel(
         IAppBarService appBarService,
@@ -687,6 +693,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         MoveWidgetDownCommand = new RelayCommand(ExecuteMoveWidgetDown);
         ApplyThemeCommand = new RelayCommand(ExecuteApplyTheme);
         ApplyAccentCommand = new RelayCommand(ExecuteApplyAccent);
+        SetBarHeightCommand = new RelayCommand(param =>
+        {
+            if (param is double d) BarHeightDip = d;
+            else if (param is float f) BarHeightDip = f;
+            else if (param is int i) BarHeightDip = i;
+            else if (param is string s && double.TryParse(s, out double parsed)) BarHeightDip = parsed;
+        });
 
         // Initialize Themes & Accents
         InitializeThemesAndAccents();
@@ -992,8 +1005,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             var settings = _dockSettingsService.CurrentSettings;
 
-            // 1. Edge (Top / Bottom)
+            // 1. Edge & BarHeightDip
             CurrentEdge = settings.Edge;
+            if (settings.BarHeightDip >= MinBarHeight && settings.BarHeightDip <= MaxBarHeight)
+            {
+                _barHeightDip = settings.BarHeightDip;
+                OnPropertyChanged(nameof(BarHeightDip));
+                OnPropertyChanged(nameof(DockScale));
+                OnPropertyChanged(nameof(BarHeightText));
+            }
 
             // 2. AreWidgetsVisible
             AreWidgetsVisible = settings.AreDesktopWidgetsVisible;
@@ -1085,6 +1105,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             var settings = _dockSettingsService.CurrentSettings;
             settings.Edge = CurrentEdge;
+            settings.BarHeightDip = BarHeightDip;
             settings.AreDesktopWidgetsVisible = AreWidgetsVisible;
             settings.SelectedThemeId = CurrentTheme?.Id ?? "dark-modern";
             settings.SelectedAccentHex = CurrentAccent?.ColorHex ?? "#007ACC";
@@ -1165,6 +1186,29 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public bool IsAtBottom => CurrentEdge == BarEdge.Bottom;
     public string EdgeLabel => CurrentEdge == BarEdge.Top ? "Topo" : "Base";
+
+    public double BarHeightDip
+    {
+        get => _barHeightDip;
+        set
+        {
+            double clamped = Math.Clamp(Math.Round(value), MinBarHeight, MaxBarHeight);
+            if (Math.Abs(_barHeightDip - clamped) > 0.1)
+            {
+                _barHeightDip = clamped;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(DockScale));
+                OnPropertyChanged(nameof(BarHeightText));
+                BarHeightChanged?.Invoke(this, clamped);
+                SaveAllCustomizationsToDisk();
+            }
+        }
+    }
+
+    public double DockScale => Math.Round(_barHeightDip / DefaultBarHeight, 3);
+    public string BarHeightText => $"{BarHeightDip:0} px";
+
+    public event EventHandler<double>? BarHeightChanged;
 
     /// <summary>
     /// Requirement (1): AreWidgetsVisible = false by default on startup.

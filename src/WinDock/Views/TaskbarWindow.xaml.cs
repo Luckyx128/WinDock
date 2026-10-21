@@ -14,7 +14,8 @@ namespace WinDock.Views;
 
 public partial class TaskbarWindow : Window
 {
-    public const double BarHeightDip = 48.0;
+    public const double DefaultBarHeightDip = 48.0;
+    public double BarHeightDip => _viewModel?.BarHeightDip ?? DefaultBarHeightDip;
 
     private readonly MainViewModel _viewModel;
     private readonly IAppBarService _appBarService;
@@ -25,6 +26,10 @@ public partial class TaskbarWindow : Window
     private IDockOrderableItem? _draggedItem;
     private FrameworkElement? _draggedElement;
     private bool _isDraggingDockItem;
+
+    private bool _isResizingBar;
+    private double _resizeStartScreenY;
+    private double _resizeStartHeight;
 
     public TaskbarWindow(
         MainViewModel viewModel,
@@ -45,6 +50,7 @@ public partial class TaskbarWindow : Window
         Deactivated += (_, _) => ResetDockItemDrag();
 
         _viewModel.EdgeChanged += OnEdgeChanged;
+        _viewModel.BarHeightChanged += OnBarHeightChanged;
         _viewModel.WidgetsVisibilityChanged += OnWidgetsVisibilityChanged;
         _viewModel.FullscreenStateChanged += OnFullscreenStateChanged;
     }
@@ -60,7 +66,7 @@ public partial class TaskbarWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         RegisterOrUpdateBar();
-        _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, BarHeightDip);
+        _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, _viewModel.BarHeightDip);
     }
 
     /// <summary>
@@ -93,25 +99,26 @@ public partial class TaskbarWindow : Window
     {
         try
         {
+            Height = _viewModel.BarHeightDip;
             if (!_isBarRegistered)
             {
-                _appBarService.RegisterBar(this, BarHeightDip, _viewModel.CurrentEdge);
+                _appBarService.RegisterBar(this, _viewModel.BarHeightDip, _viewModel.CurrentEdge);
                 _isBarRegistered = true;
             }
             else
             {
-                _appBarService.UpdateBarPosition(this, BarHeightDip, _viewModel.CurrentEdge);
+                _appBarService.UpdateBarPosition(this, _viewModel.BarHeightDip, _viewModel.CurrentEdge);
             }
         }
         catch
         {
             // Fallback positioning if AppBar registration fails
             Width = SystemParameters.PrimaryScreenWidth;
-            Height = BarHeightDip;
+            Height = _viewModel.BarHeightDip;
             Left = 0;
             Top = _viewModel.CurrentEdge == BarEdge.Top
                 ? 0
-                : Math.Max(0, SystemParameters.PrimaryScreenHeight - BarHeightDip);
+                : Math.Max(0, SystemParameters.PrimaryScreenHeight - _viewModel.BarHeightDip);
         }
     }
 
@@ -119,16 +126,33 @@ public partial class TaskbarWindow : Window
     {
         try
         {
-            _appBarService.UpdateBarPosition(this, BarHeightDip, _viewModel.CurrentEdge);
+            _appBarService.UpdateBarPosition(this, _viewModel.BarHeightDip, _viewModel.CurrentEdge);
         }
         catch
         {
             Top = _viewModel.CurrentEdge == BarEdge.Top
                 ? 0
-                : Math.Max(0, SystemParameters.PrimaryScreenHeight - BarHeightDip);
+                : Math.Max(0, SystemParameters.PrimaryScreenHeight - _viewModel.BarHeightDip);
         }
 
-        _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, BarHeightDip);
+        _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, _viewModel.BarHeightDip);
+    }
+
+    private void OnBarHeightChanged(object? sender, double newHeight)
+    {
+        try
+        {
+            Height = newHeight;
+            _appBarService.UpdateBarPosition(this, newHeight, _viewModel.CurrentEdge);
+            _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, newHeight);
+        }
+        catch
+        {
+            Height = newHeight;
+            Top = _viewModel.CurrentEdge == BarEdge.Top
+                ? 0
+                : Math.Max(0, SystemParameters.PrimaryScreenHeight - newHeight);
+        }
     }
 
     private void OnWidgetsVisibilityChanged(object? sender, EventArgs e)
@@ -144,8 +168,28 @@ public partial class TaskbarWindow : Window
         }
     }
 
+    protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
+    {
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            double step = e.Delta > 0 ? 2.0 : -2.0;
+            _viewModel.BarHeightDip += step;
+            e.Handled = true;
+            return;
+        }
+        base.OnPreviewMouseWheel(e);
+    }
+
     private void DockScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            double step = e.Delta > 0 ? 2.0 : -2.0;
+            _viewModel.BarHeightDip += step;
+            e.Handled = true;
+            return;
+        }
+
         if (DockScrollViewer is null)
         {
             return;
@@ -282,6 +326,60 @@ public partial class TaskbarWindow : Window
         _isDraggingDockItem = false;
     }
 
+    public void ResizeGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement grip)
+        {
+            _isResizingBar = true;
+            _resizeStartScreenY = PointToScreen(e.GetPosition(this)).Y;
+            _resizeStartHeight = _viewModel.BarHeightDip;
+            grip.CaptureMouse();
+            e.Handled = true;
+        }
+    }
+
+    public void ResizeGrip_MouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isResizingBar || sender is not FrameworkElement grip || !grip.IsMouseCaptured)
+        {
+            return;
+        }
+
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            grip.ReleaseMouseCapture();
+            _isResizingBar = false;
+            return;
+        }
+
+        double currentScreenY = PointToScreen(e.GetPosition(this)).Y;
+        double deltaPixels = currentScreenY - _resizeStartScreenY;
+        double dpiScaleY = VisualTreeHelper.GetDpi(this).DpiScaleY;
+        double deltaDip = deltaPixels / (dpiScaleY > 0 ? dpiScaleY : 1.0);
+
+        // If bar is at the bottom, dragging UP (negative delta) increases height!
+        // If bar is at the top, dragging DOWN (positive delta) increases height!
+        double newHeight = _viewModel.CurrentEdge == BarEdge.Bottom
+            ? _resizeStartHeight - deltaDip
+            : _resizeStartHeight + deltaDip;
+
+        _viewModel.BarHeightDip = newHeight;
+        e.Handled = true;
+    }
+
+    public void ResizeGrip_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isResizingBar)
+        {
+            if (sender is FrameworkElement grip && grip.IsMouseCaptured)
+            {
+                grip.ReleaseMouseCapture();
+            }
+            _isResizingBar = false;
+            e.Handled = true;
+        }
+    }
+
     // Backward-compatibility forwarders
     private void DockAppButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DockItem_PreviewMouseLeftButtonDown(sender, e);
     private void DockAppButton_PreviewMouseMove(object sender, MouseEventArgs e) => DockItem_PreviewMouseMove(sender, e);
@@ -291,6 +389,7 @@ public partial class TaskbarWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         _viewModel.EdgeChanged -= OnEdgeChanged;
+        _viewModel.BarHeightChanged -= OnBarHeightChanged;
         _viewModel.WidgetsVisibilityChanged -= OnWidgetsVisibilityChanged;
         _viewModel.FullscreenStateChanged -= OnFullscreenStateChanged;
 

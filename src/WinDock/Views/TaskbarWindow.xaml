@@ -292,6 +292,17 @@
 
                         <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
 
+                        <!-- Tamanho da Dock -->
+                        <MenuItem Header="Tamanho da Dock" Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📏" FontSize="11" Foreground="{DynamicResource AccentColorBrush}" />
+                            </MenuItem.Icon>
+                            <MenuItem Header="Compacto (38px)" Command="{Binding DataContext.SetBarHeightCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="38" Style="{StaticResource DarkMenuItemStyle}" />
+                            <MenuItem Header="Padrão (48px)" Command="{Binding DataContext.SetBarHeightCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="48" Style="{StaticResource DarkMenuItemStyle}" />
+                            <MenuItem Header="Médio (58px)" Command="{Binding DataContext.SetBarHeightCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="58" Style="{StaticResource DarkMenuItemStyle}" />
+                            <MenuItem Header="Grande (68px)" Command="{Binding DataContext.SetBarHeightCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="68" Style="{StaticResource DarkMenuItemStyle}" />
+                        </MenuItem>
+
                         <!-- Personalizar Dock... -->
                         <MenuItem Header="Personalizar Dock..."
                                   Command="{Binding DataContext.OpenCustomizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -1206,8 +1217,9 @@
             BorderBrush="{DynamicResource BarBorderBrush}"
             BorderThickness="0,1,0,0">
         
-        <!-- Center-Aligned Scrollable Unified Dock Strip -->
-        <ScrollViewer x:Name="DockScrollViewer"
+        <Grid>
+            <!-- Center-Aligned Scrollable Unified Dock Strip -->
+            <ScrollViewer x:Name="DockScrollViewer"
                       HorizontalScrollBarVisibility="Hidden"
                       VerticalScrollBarVisibility="Disabled"
                       PreviewMouseWheel="DockScrollViewer_PreviewMouseWheel"
@@ -1216,6 +1228,9 @@
             
             <!-- ONE CLEAN UNIFIED HORIZONTAL STRIP: Open Apps + Pinned Apps (1x1 items) + One subtle gear button at the end! -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
+                <StackPanel.LayoutTransform>
+                    <ScaleTransform ScaleX="{Binding DockScale}" ScaleY="{Binding DockScale}" />
+                </StackPanel.LayoutTransform>
 
                 <!-- Requirement (Sprint 6): UNIFIED INTERLEAVED DOCK STRIP (Apps + Widgets freely mixed!) -->
                 <!-- Combines open apps, pinned apps, and modular dock widgets in one freely reorderable horizontal strip -->
@@ -1242,5 +1257,18 @@
 
             </StackPanel>
         </ScrollViewer>
-    </Border>
+
+        <!-- Edge Resize Grip (allows dragging border to scale dock height) -->
+        <Border x:Name="DockResizeGrip"
+                Height="5"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Stretch"
+                Cursor="SizeNS"
+                Background="#01FFFFFF"
+                ToolTip="Arraste para redimensionar a altura da Dock (ou use Ctrl + Scroll do mouse)"
+                MouseLeftButtonDown="ResizeGrip_MouseLeftButtonDown"
+                MouseMove="ResizeGrip_MouseMove"
+                MouseLeftButtonUp="ResizeGrip_MouseLeftButtonUp" />
+    </Grid>
+</Border>
 </Window>
