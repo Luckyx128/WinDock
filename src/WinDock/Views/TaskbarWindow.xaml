@@ -561,63 +561,416 @@
                         </Grid>
                     </Grid>
 
-                    <!-- STEAM WIDGET -->
-                    <Grid x:Name="SteamWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1: Gamepad vector icon -->
+                    <!-- STEAM WIDGETS (6 MODULAR WIDGETS WITH REAL ARTWORK & CLIENT ICONS) -->
+                    <!-- 1. STEAM: JUMP IN / CONTINUAR JOGANDO (steam-jump-in e legado steam) -->
+                    <Grid x:Name="SteamJumpInPanel" Visibility="Collapsed">
+                        <!-- 1x1: Jump In Game Icon (40px) -->
                         <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
                             <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Command="{Binding DataContext.LaunchLastPlayedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.LastPlayedGameTitle, RelativeSource={RelativeSource AncestorType=Window}}"
                                     Width="36" Height="34">
-                                <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
-                                      Stretch="Uniform"
-                                      Width="18" Height="14"
-                                      Fill="{DynamicResource AccentCyanBrush}" />
+                                <Grid Width="28" Height="28">
+                                    <Border CornerRadius="6" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.LastPlayedGameIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                               Stretch="UniformToFill" />
+                                    </Border>
+                                    <Border Width="10" Height="10" CornerRadius="5" Background="#DD101826"
+                                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-1,-1">
+                                        <Path Data="M3 2L8 5L3 8Z" Fill="{DynamicResource AccentCyanBrush}" Stretch="Uniform" Width="5" Height="5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                </Grid>
                             </Button>
                         </Grid>
-                        <!-- 1x2: Gamepad icon + Game name -->
+                        <!-- 1x2: Jump In Game Header/Banner + Icon + Title (82px) -->
                         <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
                             <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Command="{Binding DataContext.LaunchLastPlayedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.LastPlayedGameTitle, RelativeSource={RelativeSource AncestorType=Window}}"
                                     Width="78" Height="34">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
-                                          Stretch="Uniform"
-                                          Width="14" Height="11"
-                                          Fill="{DynamicResource AccentCyanBrush}"
-                                          Margin="0,0,5,0"
-                                          VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="9.5"
-                                               FontWeight="Medium"
-                                               MaxWidth="54"
-                                               TextTrimming="CharacterEllipsis"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               VerticalAlignment="Center" />
+                                <Grid Width="78" Height="34">
+                                    <Border CornerRadius="7" ClipToBounds="True">
+                                        <Grid>
+                                            <Image Source="{Binding DataContext.LastPlayedGameHeader, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" Opacity="0.32"
+                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Border Background="#660A0E18" />
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0">
+                                        <Border CornerRadius="4" Width="24" Height="24" ClipToBounds="True" Margin="0,0,5,0">
+                                            <Image Source="{Binding DataContext.LastPlayedGameIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="CONTINUAR" FontSize="7" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                            <TextBlock Text="{Binding DataContext.LastPlayedGameTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="9" FontWeight="SemiBold" MaxWidth="44" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </Grid>
+                        <!-- 1x3: Jump In Game Header + Icon + Wide Title (124px) -->
+                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.LaunchLastPlayedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.LastPlayedGameTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="120" Height="34">
+                                <Grid Width="120" Height="34">
+                                    <Border CornerRadius="7" ClipToBounds="True">
+                                        <Grid>
+                                            <Image Source="{Binding DataContext.LastPlayedGameHeader, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" Opacity="0.35"
+                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Border Background="#550A0E18" />
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0">
+                                        <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True" Margin="0,0,6,0">
+                                            <Image Source="{Binding DataContext.LastPlayedGameIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="CONTINUAR JOGANDO" FontSize="7" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                            <TextBlock Text="{Binding DataContext.LastPlayedGameTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="9.5" FontWeight="SemiBold" MaxWidth="80" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 2. STEAM: JOGOS RECENTES (steam-recent) -->
+                    <Grid x:Name="SteamRecentPanel" Visibility="Collapsed">
+                        <!-- 1x1: Most Recent Game Icon -->
+                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.LaunchRecentSteamGame1Command, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.RecentSteamGame1.Name, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="36" Height="34">
+                                <Border CornerRadius="6" Width="28" Height="28" ClipToBounds="True">
+                                    <Image Source="{Binding DataContext.RecentSteamGame1.IconImage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                </Border>
+                            </Button>
+                        </Grid>
+                        <!-- 1x2: 2 Recent Games Side by Side -->
+                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.LaunchRecentSteamGame1Command, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="{Binding DataContext.RecentSteamGame1.Name, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Width="37" Height="34" Margin="0,0,2,0">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.RecentSteamGame1.IconImage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.LaunchRecentSteamGame2Command, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="{Binding DataContext.RecentSteamGame2.Name, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Width="37" Height="34">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.RecentSteamGame2.IconImage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                        <!-- 1x3: 3 Recent Games Shelf -->
+                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.LaunchRecentSteamGame1Command, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="{Binding DataContext.RecentSteamGame1.Name, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Width="38" Height="34" Margin="0,0,2,0">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.RecentSteamGame1.IconImage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.LaunchRecentSteamGame2Command, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="{Binding DataContext.RecentSteamGame2.Name, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Width="38" Height="34" Margin="0,0,2,0">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.RecentSteamGame2.IconImage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.LaunchRecentSteamGame3Command, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="{Binding DataContext.RecentSteamGame3.Name, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Width="38" Height="34">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.RecentSteamGame3.IconImage, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 3. STEAM: DOWNLOADS & UPDATES (steam-downloads) -->
+                    <Grid x:Name="SteamDownloadsPanel" Visibility="Collapsed">
+                        <!-- 1x1: Downloading Game Icon + Percentage Pill -->
+                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamDownloadsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamDownloadTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="36" Height="34">
+                                <Grid Width="28" Height="28">
+                                    <Border CornerRadius="6" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.SteamDownloadIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <Border CornerRadius="3" Background="#DD101826" Padding="2,0.5"
+                                            HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-2,-2">
+                                        <TextBlock Text="{Binding DataContext.SteamDownloadStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="7" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                    </Border>
+                                </Grid>
+                            </Button>
+                        </Grid>
+                        <!-- 1x2: Icon + Title + Progress Bar (82px) -->
+                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamDownloadsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamDownloadTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="78" Height="34">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0">
+                                    <Border CornerRadius="4" Width="24" Height="24" ClipToBounds="True" Margin="0,0,5,0">
+                                        <Image Source="{Binding DataContext.SteamDownloadIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DataContext.SteamDownloadTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="8.5" FontWeight="Medium" MaxWidth="44" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                     Value="{Binding DataContext.SteamDownloadPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                     Foreground="{DynamicResource AccentCyanBrush}"
+                                                     Width="44" Height="3.5" Margin="0,2.5,0,0" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Button>
                         </Grid>
-                        <!-- 1x3: Gamepad icon + Full Title -->
+                        <!-- 1x3: Icon + Title + Percentage + Wide Progress Bar (124px) -->
                         <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
                             <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Command="{Binding DataContext.OpenSteamDownloadsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamDownloadTitle, RelativeSource={RelativeSource AncestorType=Window}}"
                                     Width="120" Height="34">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
-                                          Stretch="Uniform"
-                                          Width="15" Height="12"
-                                          Fill="{DynamicResource AccentCyanBrush}"
-                                          Margin="0,0,6,0"
-                                          VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="9.5"
-                                               FontWeight="Medium"
-                                               MaxWidth="94"
-                                               TextTrimming="CharacterEllipsis"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               VerticalAlignment="Center" />
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True" Margin="0,0,6,0">
+                                        <Image Source="{Binding DataContext.SteamDownloadIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <Grid Width="80">
+                                            <TextBlock Text="{Binding DataContext.SteamDownloadTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="9" FontWeight="Medium" MaxWidth="54" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Left" />
+                                            <TextBlock Text="{Binding DataContext.SteamDownloadStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="8" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}"
+                                                       HorizontalAlignment="Right" />
+                                        </Grid>
+                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                     Value="{Binding DataContext.SteamDownloadPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                     Foreground="{DynamicResource AccentCyanBrush}"
+                                                     Width="80" Height="3.5" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 4. STEAM: SESSÃO & PERFIL (steam-now-playing) -->
+                    <Grid x:Name="SteamNowPlayingPanel" Visibility="Collapsed">
+                        <!-- 1x1: Steam Client Icon + Active Dot -->
+                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamGamesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamSessionStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="36" Height="34">
+                                <Grid Width="28" Height="28">
+                                    <Border CornerRadius="6" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <Ellipse Width="6" Height="6" Fill="#2ECC71" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,1" />
+                                </Grid>
+                            </Button>
+                        </Grid>
+                        <!-- 1x2: Steam Icon + Persona Name + Status (82px) -->
+                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamGamesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamSessionStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="78" Height="34">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0">
+                                    <Border CornerRadius="4" Width="22" Height="22" ClipToBounds="True" Margin="0,0,5,0">
+                                        <Image Source="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DataContext.SteamPersonaName, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9.5" FontWeight="SemiBold" MaxWidth="46" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <TextBlock Text="{Binding DataContext.SteamSessionStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="8" MaxWidth="46" TextTrimming="CharacterEllipsis"
+                                                   Foreground="#2ECC71" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <!-- 1x3: Steam Icon + Persona Name + Full Status (124px) -->
+                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamGamesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamSessionStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="120" Height="34">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0">
+                                    <Border CornerRadius="5" Width="24" Height="24" ClipToBounds="True" Margin="0,0,6,0">
+                                        <Image Source="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DataContext.SteamPersonaName, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="10" FontWeight="SemiBold" MaxWidth="82" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <TextBlock Text="{Binding DataContext.SteamSessionStatusText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="8.5" MaxWidth="82" TextTrimming="CharacterEllipsis"
+                                                   Foreground="#2ECC71" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 5. STEAM: ATALHOS RÁPIDOS (steam-hub) -->
+                    <Grid x:Name="SteamHubPanel" Visibility="Collapsed">
+                        <!-- 1x1: Steam Hub Single Button -->
+                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamGamesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="Biblioteca Steam"
+                                    Width="36" Height="34">
+                                <Border CornerRadius="6" Width="26" Height="26" ClipToBounds="True">
+                                    <Image Source="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                </Border>
+                            </Button>
+                        </Grid>
+                        <!-- 1x2: Games + Friends Shortcuts (82px) -->
+                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.OpenSteamGamesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="Biblioteca Steam"
+                                        Width="37" Height="34" Margin="0,0,2,0">
+                                    <Border CornerRadius="5" Width="22" Height="22" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.OpenSteamFriendsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="Amigos Steam"
+                                        Width="37" Height="34">
+                                    <TextBlock Text="👥" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                        <!-- 1x3: Games + Friends + Screenshots Shortcuts (124px) -->
+                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.OpenSteamGamesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="Biblioteca Steam"
+                                        Width="38" Height="34" Margin="0,0,2,0">
+                                    <Border CornerRadius="5" Width="22" Height="22" ClipToBounds="True">
+                                        <Image Source="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                </Button>
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.OpenSteamFriendsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="Amigos Steam"
+                                        Width="38" Height="34" Margin="0,0,2,0">
+                                    <TextBlock Text="👥" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                                <Button Style="{StaticResource MiniActionButtonStyle}"
+                                        Command="{Binding DataContext.OpenSteamScreenshotsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="Capturas de Tela"
+                                        Width="38" Height="34">
+                                    <TextBlock Text="📸" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 6. STEAM: ESPAÇO DA BIBLIOTECA (steam-storage) -->
+                    <Grid x:Name="SteamStoragePanel" Visibility="Collapsed">
+                        <!-- 1x1: Steam Storage Icon / Total GB -->
+                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamStorageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamLargestGameText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="36" Height="34">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="SSD" FontSize="7" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding DataContext.SteamTotalStorageText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <!-- 1x2: Largest Game Icon + Total Size (82px) -->
+                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamStorageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamLargestGameText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="78" Height="34">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0,0,0">
+                                    <Border CornerRadius="4" Width="24" Height="24" ClipToBounds="True" Margin="0,0,5,0">
+                                        <Image Source="{Binding DataContext.SteamLargestGameIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="STEAM SSD" FontSize="7" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                        <TextBlock Text="{Binding DataContext.SteamTotalStorageText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9.5" FontWeight="SemiBold" MaxWidth="44" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <!-- 1x3: Largest Game Icon + Total Size + Largest Game Title (124px) -->
+                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                            <Button Style="{StaticResource MiniActionButtonStyle}"
+                                    Command="{Binding DataContext.OpenSteamStorageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="{Binding DataContext.SteamLargestGameText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    Width="120" Height="34">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0">
+                                    <Border CornerRadius="5" Width="26" Height="26" ClipToBounds="True" Margin="0,0,6,0">
+                                        <Image Source="{Binding DataContext.SteamLargestGameIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="SSD: " FontSize="7.5" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                            <TextBlock Text="{Binding DataContext.SteamTotalStorageText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="8.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding DataContext.SteamLargestGameText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="8.5" MaxWidth="80" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                                    </StackPanel>
                                 </StackPanel>
                             </Button>
                         </Grid>
@@ -815,7 +1168,25 @@
                     <Setter TargetName="MediaWidgetPanel" Property="Visibility" Value="Visible" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Id}" Value="steam">
-                    <Setter TargetName="SteamWidgetPanel" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="SteamJumpInPanel" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Id}" Value="steam-jump-in">
+                    <Setter TargetName="SteamJumpInPanel" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Id}" Value="steam-recent">
+                    <Setter TargetName="SteamRecentPanel" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Id}" Value="steam-downloads">
+                    <Setter TargetName="SteamDownloadsPanel" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Id}" Value="steam-now-playing">
+                    <Setter TargetName="SteamNowPlayingPanel" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Id}" Value="steam-hub">
+                    <Setter TargetName="SteamHubPanel" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Id}" Value="steam-storage">
+                    <Setter TargetName="SteamStoragePanel" Property="Visibility" Value="Visible" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Id}" Value="discord">
                     <Setter TargetName="DiscordWidgetPanel" Property="Visibility" Value="Visible" />

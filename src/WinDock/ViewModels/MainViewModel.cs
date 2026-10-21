@@ -571,6 +571,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand LaunchSteamGameCommand { get; }
     public ICommand LaunchSelectedSteamGameCommand { get; }
     public ICommand OpenSteamCommand { get; }
+    public ICommand LaunchLastPlayedSteamGameCommand { get; }
+    public ICommand LaunchRecentSteamGame1Command { get; }
+    public ICommand LaunchRecentSteamGame2Command { get; }
+    public ICommand LaunchRecentSteamGame3Command { get; }
+    public ICommand OpenSteamDownloadsCommand { get; }
+    public ICommand OpenSteamGamesCommand { get; }
+    public ICommand OpenSteamFriendsCommand { get; }
+    public ICommand OpenSteamScreenshotsCommand { get; }
+    public ICommand OpenSteamStorageCommand { get; }
     public ICommand FocusDiscordCommand { get; }
     public ICommand ToggleNativeTaskbarCommand { get; }
     public ICommand ToggleBarEdgeCommand { get; }
@@ -650,6 +659,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         LaunchSteamGameCommand = new RelayCommand(ExecuteLaunchSteamGame);
         LaunchSelectedSteamGameCommand = new RelayCommand(ExecuteLaunchSelectedSteamGame);
         OpenSteamCommand = new RelayCommand(() => SafeInvoke(_steamIntegrationService.OpenSteam));
+        LaunchLastPlayedSteamGameCommand = new RelayCommand(ExecuteLaunchLastPlayedSteamGame);
+        LaunchRecentSteamGame1Command = new RelayCommand(() => ExecuteLaunchRecentSteamGame(0));
+        LaunchRecentSteamGame2Command = new RelayCommand(() => ExecuteLaunchRecentSteamGame(1));
+        LaunchRecentSteamGame3Command = new RelayCommand(() => ExecuteLaunchRecentSteamGame(2));
+        OpenSteamDownloadsCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/downloads"));
+        OpenSteamGamesCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/games"));
+        OpenSteamFriendsCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/friends"));
+        OpenSteamScreenshotsCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/screenshots"));
+        OpenSteamStorageCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/storage"));
         FocusDiscordCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.FocusOrLaunchDiscord));
         ToggleNativeTaskbarCommand = new RelayCommand(ExecuteToggleNativeTaskbar);
         ToggleBarEdgeCommand = new RelayCommand(ExecuteToggleBarEdge);
@@ -868,12 +886,62 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         AddWidget(new DockWidgetItem
         {
-            Id = "steam",
-            Title = "Steam Game Status",
+            Id = "steam-jump-in",
+            Title = "Steam: Continuar Jogando",
+            IconGlyph = "▶",
+            Description = "1-clique para continuar o último jogo com banner e ícone oficial",
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "steam-recent",
+            Title = "Steam: Jogos Recentes",
+            IconGlyph = "🕹",
+            Description = "Estante dos 1, 2 ou 3 últimos jogos com ícones originais",
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x3
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "steam-downloads",
+            Title = "Steam: Downloads & Updates",
+            IconGlyph = "⬇",
+            Description = "Progresso de download/atualização com barra e porcentagem",
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "steam-now-playing",
+            Title = "Steam: Sessão & Perfil",
+            IconGlyph = "👤",
+            Description = "Nome de perfil, avatar/ícone Steam e jogo em execução",
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "steam-hub",
+            Title = "Steam: Atalhos Rápidos",
             IconGlyph = "🎮",
-            Description = "Status da Steam e launcher rápido de jogos",
+            Description = "Acesso rápido com ícone oficial (Biblioteca, Amigos, Prints)",
             IsVisible = false,
             Size = DockWidgetSize.Size1x1
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "steam-storage",
+            Title = "Steam: Espaço da Biblioteca",
+            IconGlyph = "💾",
+            Description = "Espaço ocupado no SSD e destaque do maior jogo instalado",
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
         });
 
         AddWidget(new DockWidgetItem
@@ -1080,6 +1148,23 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(SteamHeadlineText));
             OnPropertyChanged(nameof(SteamSubText));
             OnPropertyChanged(nameof(HasInstalledGames));
+            OnPropertyChanged(nameof(LastPlayedGameTitle));
+            OnPropertyChanged(nameof(LastPlayedGameIcon));
+            OnPropertyChanged(nameof(LastPlayedGameHeader));
+            OnPropertyChanged(nameof(RecentGames));
+            OnPropertyChanged(nameof(RecentSteamGame1));
+            OnPropertyChanged(nameof(RecentSteamGame2));
+            OnPropertyChanged(nameof(RecentSteamGame3));
+            OnPropertyChanged(nameof(SteamDownloadTitle));
+            OnPropertyChanged(nameof(SteamDownloadIcon));
+            OnPropertyChanged(nameof(SteamDownloadStatusText));
+            OnPropertyChanged(nameof(SteamDownloadPercent));
+            OnPropertyChanged(nameof(SteamSessionStatusText));
+            OnPropertyChanged(nameof(SteamPersonaName));
+            OnPropertyChanged(nameof(SteamClientIcon));
+            OnPropertyChanged(nameof(SteamLargestGameText));
+            OnPropertyChanged(nameof(SteamTotalStorageText));
+            OnPropertyChanged(nameof(SteamLargestGameIcon));
         }
     }
 
@@ -1098,6 +1183,45 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         get => _selectedSteamGame;
         set => SetField(ref _selectedSteamGame, value);
     }
+
+    // Modular Steam Widgets properties (100% real artwork and icons)
+    public string LastPlayedGameTitle => SteamStatus.LastPlayedGame?.Name ?? "Nenhum jogo recente";
+    public ImageSource? LastPlayedGameIcon => SteamStatus.LastPlayedGame?.IconImage ?? SteamClientIcon;
+    public ImageSource? LastPlayedGameHeader => SteamStatus.LastPlayedGame?.HeaderImage ?? LastPlayedGameIcon;
+
+    public IReadOnlyList<SteamGameInfo> RecentGames =>
+        InstalledGames.Where(g => g.LastPlayedUnix > 0)
+            .OrderByDescending(g => g.LastPlayedUnix)
+            .Take(3)
+            .ToList() is { Count: > 0 } recent
+            ? recent
+            : InstalledGames.Take(3).ToList();
+
+    public SteamGameInfo? RecentSteamGame1 => RecentGames.ElementAtOrDefault(0);
+    public SteamGameInfo? RecentSteamGame2 => RecentGames.ElementAtOrDefault(1);
+    public SteamGameInfo? RecentSteamGame3 => RecentGames.ElementAtOrDefault(2);
+
+    public string SteamDownloadTitle => SteamStatus.ActiveDownloadGame?.Name
+        ?? (InstalledGames.Any(g => g.IsDownloading) ? "Baixando..." : "Downloads em dia");
+    public ImageSource? SteamDownloadIcon => SteamStatus.ActiveDownloadGame?.IconImage ?? SteamClientIcon;
+    public string SteamDownloadStatusText => SteamStatus.ActiveDownloadGame != null
+        ? $"{SteamStatus.ActiveDownloadGame.DownloadPercent:0}%"
+        : "100%";
+    public double SteamDownloadPercent => SteamStatus.ActiveDownloadGame != null
+        ? SteamStatus.ActiveDownloadGame.DownloadPercent
+        : 100.0;
+
+    public string SteamSessionStatusText => IsSteamGameRunning
+        ? $"Jogando {SteamStatus.RunningGameName}"
+        : (SteamStatus.IsRunning ? "Online (Pronto)" : (SteamStatus.IsInstalled ? "Pronto para jogar" : "Steam offline"));
+    public string SteamPersonaName => !string.IsNullOrWhiteSpace(SteamStatus.PersonaName) ? SteamStatus.PersonaName : "Luckyx";
+    public ImageSource? SteamClientIcon => SteamStatus.SteamClientIcon;
+
+    public string SteamLargestGameText => SteamStatus.LargestGame != null
+        ? $"{SteamStatus.LargestGame.Name} ({SteamStatus.LargestGame.SizeFormatted})"
+        : "Nenhum jogo instalado";
+    public string SteamTotalStorageText => SteamStatus.TotalStorageFormatted;
+    public ImageSource? SteamLargestGameIcon => SteamStatus.LargestGame?.IconImage ?? SteamClientIcon;
 
     public AiUsageSnapshot AiUsage
     {
@@ -2272,6 +2396,46 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             SafeInvoke(() => _steamIntegrationService.LaunchGame(game.AppId));
         }
         else
+        {
+            SafeInvoke(_steamIntegrationService.OpenSteam);
+        }
+    }
+
+    private void ExecuteLaunchLastPlayedSteamGame()
+    {
+        if (SteamStatus.LastPlayedGame is { AppId: > 0 } game)
+        {
+            SafeInvoke(() => _steamIntegrationService.LaunchGame(game.AppId));
+        }
+        else
+        {
+            SafeInvoke(_steamIntegrationService.OpenSteam);
+        }
+    }
+
+    private void ExecuteLaunchRecentSteamGame(int index)
+    {
+        if (RecentGames.Count > index && RecentGames[index] is { AppId: > 0 } game)
+        {
+            SafeInvoke(() => _steamIntegrationService.LaunchGame(game.AppId));
+        }
+        else
+        {
+            SafeInvoke(_steamIntegrationService.OpenSteam);
+        }
+    }
+
+    private void ExecuteOpenSteamProtocol(string protocol)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = protocol,
+                UseShellExecute = true
+            });
+        }
+        catch
         {
             SafeInvoke(_steamIntegrationService.OpenSteam);
         }

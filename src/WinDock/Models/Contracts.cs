@@ -92,6 +92,43 @@ public sealed class SteamGameInfo
 {
     public int AppId { get; init; }
     public string Name { get; init; } = string.Empty;
+    public long LastPlayedUnix { get; init; }
+    public long SizeOnDiskBytes { get; init; }
+    public int StateFlags { get; init; } = 4;
+    public long BytesToDownload { get; init; }
+    public long BytesDownloaded { get; init; }
+    public string? IconPath { get; init; }
+    public string? HeaderImagePath { get; init; }
+    public string? LogoImagePath { get; init; }
+    public ImageSource? IconImage { get; init; }
+    public ImageSource? HeaderImage { get; init; }
+    public ImageSource? LogoImage { get; init; }
+
+    public bool IsDownloading => StateFlags != 4 && BytesToDownload > 0 && BytesDownloaded < BytesToDownload;
+    public double DownloadPercent => BytesToDownload > 0 ? Math.Clamp(BytesDownloaded * 100.0 / BytesToDownload, 0.0, 100.0) : 100.0;
+    public string SizeFormatted
+    {
+        get
+        {
+            if (SizeOnDiskBytes <= 0) return "0 GB";
+            double gb = SizeOnDiskBytes / (1024.0 * 1024.0 * 1024.0);
+            return gb >= 1.0 ? $"{gb:0.0} GB" : $"{SizeOnDiskBytes / (1024.0 * 1024.0):0} MB";
+        }
+    }
+    public string LastPlayedText
+    {
+        get
+        {
+            if (LastPlayedUnix <= 0) return "Nunca jogado";
+            var dt = DateTimeOffset.FromUnixTimeSeconds(LastPlayedUnix).ToLocalTime();
+            var diff = DateTimeOffset.Now - dt;
+            if (diff.TotalMinutes < 60) return "Hoje";
+            if (diff.TotalHours < 24) return "Hoje";
+            if (diff.TotalDays < 2) return "Ontem";
+            if (diff.TotalDays < 30) return $"Há {(int)diff.TotalDays} dias";
+            return dt.ToString("dd/MM/yyyy");
+        }
+    }
 }
 
 public sealed class SteamStatus
@@ -100,7 +137,22 @@ public sealed class SteamStatus
     public bool IsRunning { get; init; }
     public int RunningAppId { get; init; }
     public string RunningGameName { get; init; } = string.Empty;
+    public string PersonaName { get; init; } = "Luckyx";
+    public ImageSource? SteamClientIcon { get; init; }
     public IReadOnlyList<SteamGameInfo> InstalledGames { get; init; } = Array.Empty<SteamGameInfo>();
+    public SteamGameInfo? LastPlayedGame { get; init; }
+    public SteamGameInfo? ActiveDownloadGame { get; init; }
+    public SteamGameInfo? LargestGame { get; init; }
+    public long TotalStorageBytes { get; init; }
+    public string TotalStorageFormatted
+    {
+        get
+        {
+            if (TotalStorageBytes <= 0) return "0 GB";
+            double gb = TotalStorageBytes / (1024.0 * 1024.0 * 1024.0);
+            return $"{gb:0.0} GB";
+        }
+    }
 }
 
 public sealed class AiProviderUsage
