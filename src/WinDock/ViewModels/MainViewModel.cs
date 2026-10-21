@@ -204,6 +204,7 @@ public sealed class DockAppItem : INotifyPropertyChanged
     private bool _isPinned;
     private string? _shortcutId;
     private ImageSource? _icon;
+    private bool _isDragging;
 
     public string Title
     {
@@ -339,17 +340,38 @@ public sealed class DockAppItem : INotifyPropertyChanged
 
     public bool HasIcon => Icon != null;
 
+    public bool IsDragging
+    {
+        get => _isDragging;
+        set
+        {
+            if (_isDragging != value)
+            {
+                _isDragging = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string PinMenuText => IsPinned ? "Desafixar da Dock" : "Fixar na Dock";
 
     public ICommand ClickCommand { get; }
     public ICommand TogglePinCommand { get; }
+    public ICommand MoveLeftCommand { get; }
+    public ICommand MoveRightCommand { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public DockAppItem(Action<DockAppItem> onClick, Action<DockAppItem> onTogglePin)
+    public DockAppItem(
+        Action<DockAppItem> onClick,
+        Action<DockAppItem> onTogglePin,
+        Action<DockAppItem>? onMoveLeft = null,
+        Action<DockAppItem>? onMoveRight = null)
     {
         ClickCommand = new RelayCommand(() => onClick(this));
         TogglePinCommand = new RelayCommand(() => onTogglePin(this));
+        MoveLeftCommand = new RelayCommand(() => onMoveLeft?.Invoke(this));
+        MoveRightCommand = new RelayCommand(() => onMoveRight?.Invoke(this));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propName = null)
@@ -443,6 +465,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private readonly DispatcherTimer _fastTimer;
     private readonly DispatcherTimer _telemetryTimer;
+    private readonly List<string> _customDockOrderKeys = new();
     private bool _isRefreshingTelemetry;
     private bool _isDisposed;
 
@@ -498,6 +521,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand DockAppClickCommand { get; }
     public ICommand TogglePinAppCommand { get; }
     public ICommand PinOpenWindowCommand { get; }
+    public ICommand MoveDockAppLeftCommand { get; }
+    public ICommand MoveDockAppRightCommand { get; }
 
     public ICommand PlayPauseCommand { get; }
     public ICommand NextTrackCommand { get; }
@@ -558,6 +583,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             if (param is AppWindowInfo win) PinOpenWindow(win);
             else if (param is OpenAppPinItem pinItem) TogglePinOpenAppItem(pinItem);
+        });
+        MoveDockAppLeftCommand = new RelayCommand(param =>
+        {
+            if (param is DockAppItem item) MoveDockAppLeft(item);
+        });
+        MoveDockAppRightCommand = new RelayCommand(param =>
+        {
+            if (param is DockAppItem item) MoveDockAppRight(item);
         });
 
         PlayPauseCommand = new RelayCommand(ExecutePlayPause);
@@ -1175,6 +1208,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     /// Requirement (2): UNIFIED DOCK APPS.
     /// Combines user-pinned apps and open windows into one unified collection of 1x1 (40x40) items.
     /// If a pinned app is open, merges it into its pinned position with its real icon and active focus indicator.
+    /// Preserves custom user order across all 500ms polling ticks.
     /// </summary>
     public void RefreshOpenWindowsAndDockApps()
     {
@@ -1195,9 +1229,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         SyncOpenWindows(windows);
 
-        // Build unified target items list
+        // Build unified candidate items list
         var pinnedShortcuts = _dockSettingsService.CurrentSettings.PinnedShortcuts;
-        var targetItems = new List<DockAppItem>();
+        var candidates = new List<DockAppItem>();
         var matchedWindowHandles = new HashSet<IntPtr>();
 
         // 1. Process all pinned shortcuts in order
@@ -1227,7 +1261,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 matchedWindowHandles.Add(matchedWindow.Handle);
 
                 var icon = matchedWindow.Icon ?? ExtractIconForPath(pinnedExe);
-                var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp)
+                var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp, MoveDockAppLeft, MoveDockAppRight)
                 {
                     Title = !string.IsNullOrWhiteSpace(pinned.Title) ? pinned.Title : matchedWindow.Title,
                     ExecutablePath = pinnedExe,
@@ -1240,13 +1274,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     ShortcutId = pinned.Id,
                     Icon = icon
                 };
-                targetItems.Add(item);
+                candidates.Add(item);
             }
             else
             {
                 // Pinned app is currently closed
                 var icon = ExtractIconForPath(pinnedExe);
-                var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp)
+                var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp, MoveDockAppLeft, MoveDockAppRight)
                 {
                     Title = pinned.Title,
                     ExecutablePath = pinnedExe,
@@ -1259,7 +1293,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     ShortcutId = pinned.Id,
                     Icon = icon
                 };
-                targetItems.Add(item);
+                candidates.Add(item);
             }
         }
 
@@ -1274,7 +1308,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             string? exePath = !string.IsNullOrWhiteSpace(win.ExecutablePath) ? win.ExecutablePath : TryGetExecutablePath(win.Handle);
             var icon = win.Icon ?? (exePath != null ? ExtractIconForPath(exePath) : null);
 
-            var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp)
+            var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp, MoveDockAppLeft, MoveDockAppRight)
             {
                 Title = win.Title,
                 ExecutablePath = exePath,
@@ -1287,8 +1321,52 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 ShortcutId = null,
                 Icon = icon
             };
-            targetItems.Add(item);
+            candidates.Add(item);
         }
+
+        // 3. Preserve custom order across polling ticks:
+        if (_customDockOrderKeys.Count == 0 && DockApps.Count > 0)
+        {
+            foreach (var app in DockApps)
+            {
+                _customDockOrderKeys.Add(GetDockAppKey(app));
+            }
+        }
+
+        var candidateByKey = new Dictionary<string, DockAppItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in candidates)
+        {
+            string key = GetDockAppKey(c);
+            if (!candidateByKey.ContainsKey(key))
+            {
+                candidateByKey[key] = c;
+            }
+        }
+
+        var targetItems = new List<DockAppItem>();
+        var activeKeys = new List<string>();
+
+        // Place all items with an established custom position
+        foreach (var key in _customDockOrderKeys)
+        {
+            if (candidateByKey.TryGetValue(key, out var item))
+            {
+                targetItems.Add(item);
+                activeKeys.Add(key);
+                candidateByKey.Remove(key);
+            }
+        }
+
+        // Append any new candidates (newly opened windows or added pins)
+        foreach (var remaining in candidateByKey.Values)
+        {
+            string key = GetDockAppKey(remaining);
+            targetItems.Add(remaining);
+            activeKeys.Add(key);
+        }
+
+        _customDockOrderKeys.Clear();
+        _customDockOrderKeys.AddRange(activeKeys);
 
         // Synchronize into DockApps collection in-place to avoid visual flickering
         SyncDockApps(targetItems);
@@ -1324,44 +1402,138 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return false;
     }
 
+    public static string GetDockAppKey(DockAppItem item)
+    {
+        if (item.IsPinned && !string.IsNullOrWhiteSpace(item.ShortcutId))
+        {
+            return $"pinned:{item.ShortcutId}";
+        }
+        if (item.WindowHandle != IntPtr.Zero)
+        {
+            return $"hwnd:{item.WindowHandle.ToInt64()}";
+        }
+        if (!string.IsNullOrWhiteSpace(item.ExecutablePath))
+        {
+            return $"exe:{item.ExecutablePath.ToLowerInvariant()}";
+        }
+        return $"proc:{item.ProcessName.ToLowerInvariant()}";
+    }
+
+    public void MoveDockApp(int fromIndex, int toIndex)
+    {
+        if (fromIndex < 0 || fromIndex >= DockApps.Count || toIndex < 0 || toIndex >= DockApps.Count || fromIndex == toIndex)
+        {
+            return;
+        }
+
+        DockApps.Move(fromIndex, toIndex);
+
+        _customDockOrderKeys.Clear();
+        foreach (var app in DockApps)
+        {
+            _customDockOrderKeys.Add(GetDockAppKey(app));
+        }
+
+        SyncPinnedOrderFromDockApps();
+    }
+
+    public void MoveDockAppLeft(DockAppItem item)
+    {
+        if (item == null) return;
+        int idx = DockApps.IndexOf(item);
+        if (idx > 0)
+        {
+            MoveDockApp(idx, idx - 1);
+        }
+    }
+
+    public void MoveDockAppRight(DockAppItem item)
+    {
+        if (item == null) return;
+        int idx = DockApps.IndexOf(item);
+        if (idx >= 0 && idx < DockApps.Count - 1)
+        {
+            MoveDockApp(idx, idx + 1);
+        }
+    }
+
+    private void SyncPinnedOrderFromDockApps()
+    {
+        var currentPinned = _dockSettingsService.CurrentSettings.PinnedShortcuts;
+        var pinnedMap = currentPinned.ToDictionary(s => s.Id, s => s, StringComparer.OrdinalIgnoreCase);
+
+        var reorderedPinned = new List<DockShortcut>();
+        foreach (var app in DockApps)
+        {
+            if (app.IsPinned && !string.IsNullOrWhiteSpace(app.ShortcutId) && pinnedMap.TryGetValue(app.ShortcutId, out var shortcut))
+            {
+                reorderedPinned.Add(shortcut);
+                pinnedMap.Remove(app.ShortcutId);
+            }
+        }
+        foreach (var remaining in pinnedMap.Values)
+        {
+            reorderedPinned.Add(remaining);
+        }
+
+        currentPinned.Clear();
+        currentPinned.AddRange(reorderedPinned);
+        _dockSettingsService.SaveSettings();
+
+        SyncPinnedShortcutsFromSettings();
+    }
+
     private void SyncDockApps(List<DockAppItem> target)
     {
         for (int i = 0; i < target.Count; i++)
         {
             var newItem = target[i];
-            if (i < DockApps.Count)
+
+            int existingIndex = -1;
+            for (int j = i; j < DockApps.Count; j++)
             {
-                var existing = DockApps[i];
-                if (CanUpdateInPlace(existing, newItem))
+                if (CanUpdateInPlace(DockApps[j], newItem))
                 {
-                    existing.Title = newItem.Title;
-                    existing.ExecutablePath = newItem.ExecutablePath;
-                    existing.ProcessName = newItem.ProcessName;
-                    existing.WindowHandle = newItem.WindowHandle;
-                    existing.IsOpen = newItem.IsOpen;
-                    existing.IsFocused = newItem.IsFocused;
-                    existing.IsMinimized = newItem.IsMinimized;
-                    existing.IsPinned = newItem.IsPinned;
-                    existing.ShortcutId = newItem.ShortcutId;
-                    if (newItem.Icon != null)
-                    {
-                        existing.Icon = newItem.Icon;
-                    }
+                    existingIndex = j;
+                    break;
                 }
-                else
-                {
-                    DockApps[i] = newItem;
-                }
+            }
+
+            if (existingIndex == i)
+            {
+                UpdateDockAppProperties(DockApps[i], newItem);
+            }
+            else if (existingIndex > i)
+            {
+                DockApps.Move(existingIndex, i);
+                UpdateDockAppProperties(DockApps[i], newItem);
             }
             else
             {
-                DockApps.Add(newItem);
+                DockApps.Insert(i, newItem);
             }
         }
 
         while (DockApps.Count > target.Count)
         {
             DockApps.RemoveAt(DockApps.Count - 1);
+        }
+    }
+
+    private static void UpdateDockAppProperties(DockAppItem existing, DockAppItem newItem)
+    {
+        existing.Title = newItem.Title;
+        existing.ExecutablePath = newItem.ExecutablePath;
+        existing.ProcessName = newItem.ProcessName;
+        existing.WindowHandle = newItem.WindowHandle;
+        existing.IsOpen = newItem.IsOpen;
+        existing.IsFocused = newItem.IsFocused;
+        existing.IsMinimized = newItem.IsMinimized;
+        existing.IsPinned = newItem.IsPinned;
+        existing.ShortcutId = newItem.ShortcutId;
+        if (newItem.Icon != null)
+        {
+            existing.Icon = newItem.Icon;
         }
     }
 
@@ -1524,6 +1696,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
 
+        string oldKey = GetDockAppKey(item);
+
         var existing = _dockSettingsService.CurrentSettings.PinnedShortcuts
             .FirstOrDefault(s => string.Equals(s.TargetPath, path, StringComparison.OrdinalIgnoreCase));
 
@@ -1547,6 +1721,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             item.IsPinned = true;
         }
 
+        string newKey = GetDockAppKey(item);
+        int keyIdx = _customDockOrderKeys.IndexOf(oldKey);
+        if (keyIdx >= 0)
+        {
+            _customDockOrderKeys[keyIdx] = newKey;
+        }
+
+        SyncPinnedOrderFromDockApps();
         SyncPinnedShortcutsFromSettings();
         RefreshFastState();
     }
@@ -1557,6 +1739,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public void UnpinApp(DockAppItem item)
     {
         if (item == null) return;
+
+        string oldKey = GetDockAppKey(item);
 
         if (!string.IsNullOrWhiteSpace(item.ShortcutId))
         {
@@ -1575,6 +1759,21 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         item.IsPinned = false;
         item.ShortcutId = null;
 
+        if (item.IsOpen && item.WindowHandle != IntPtr.Zero)
+        {
+            string newKey = GetDockAppKey(item);
+            int keyIdx = _customDockOrderKeys.IndexOf(oldKey);
+            if (keyIdx >= 0)
+            {
+                _customDockOrderKeys[keyIdx] = newKey;
+            }
+        }
+        else
+        {
+            _customDockOrderKeys.Remove(oldKey);
+        }
+
+        SyncPinnedOrderFromDockApps();
         SyncPinnedShortcutsFromSettings();
         RefreshFastState();
     }

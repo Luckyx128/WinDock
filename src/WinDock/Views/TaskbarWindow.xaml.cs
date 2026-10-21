@@ -1,9 +1,14 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 using WinDock.Models;
 using WinDock.ViewModels;
+using Point = System.Windows.Point;
+using Button = System.Windows.Controls.Button;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace WinDock.Views;
 
@@ -15,6 +20,11 @@ public partial class TaskbarWindow : Window
     private readonly IAppBarService _appBarService;
     private readonly DesktopWidgetsWindow _widgetsWindow;
     private bool _isBarRegistered;
+
+    private Point _dragStartPoint;
+    private DockAppItem? _draggedItem;
+    private Button? _draggedButton;
+    private bool _isDraggingDockApp;
 
     public TaskbarWindow(
         MainViewModel viewModel,
@@ -32,6 +42,7 @@ public partial class TaskbarWindow : Window
         SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
         Closed += OnClosed;
+        Deactivated += (_, _) => ResetDockAppDrag();
 
         _viewModel.EdgeChanged += OnEdgeChanged;
         _viewModel.WidgetsVisibilityChanged += OnWidgetsVisibilityChanged;
@@ -143,6 +154,132 @@ public partial class TaskbarWindow : Window
         double offset = DockScrollViewer.HorizontalOffset - (e.Delta * 0.5);
         DockScrollViewer.ScrollToHorizontalOffset(Math.Max(0, offset));
         e.Handled = true;
+    }
+
+    private void DockAppButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is Button button && button.DataContext is DockAppItem item)
+        {
+            _dragStartPoint = e.GetPosition(this);
+            _draggedItem = item;
+            _draggedButton = button;
+            _isDraggingDockApp = false;
+        }
+    }
+
+    private void DockAppButton_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_draggedItem == null || _draggedButton == null)
+        {
+            return;
+        }
+
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            ResetDockAppDrag();
+            return;
+        }
+
+        Point currentPoint = e.GetPosition(this);
+        double diffX = Math.Abs(currentPoint.X - _dragStartPoint.X);
+        double diffY = Math.Abs(currentPoint.Y - _dragStartPoint.Y);
+
+        if (!_isDraggingDockApp)
+        {
+            if (diffX > SystemParameters.MinimumHorizontalDragDistance || diffY > SystemParameters.MinimumVerticalDragDistance)
+            {
+                _isDraggingDockApp = true;
+                _draggedItem.IsDragging = true;
+                _draggedButton.CaptureMouse();
+            }
+        }
+
+        if (_isDraggingDockApp)
+        {
+            // Hit-test DockAppsItemsControl to find if cursor is over another DockAppItem
+            if (DockAppsItemsControl != null)
+            {
+                Point ptInItems = e.GetPosition(DockAppsItemsControl);
+                HitTestResult hitResult = VisualTreeHelper.HitTest(DockAppsItemsControl, ptInItems);
+                if (hitResult?.VisualHit != null)
+                {
+                    DependencyObject? current = hitResult.VisualHit;
+                    while (current != null && current != DockAppsItemsControl)
+                    {
+                        if (current is FrameworkElement fe && fe.DataContext is DockAppItem targetItem)
+                        {
+                            if (!ReferenceEquals(targetItem, _draggedItem))
+                            {
+                                int fromIdx = _viewModel.DockApps.IndexOf(_draggedItem);
+                                int toIdx = _viewModel.DockApps.IndexOf(targetItem);
+                                if (fromIdx >= 0 && toIdx >= 0 && fromIdx != toIdx)
+                                {
+                                    _viewModel.MoveDockApp(fromIdx, toIdx);
+                                }
+                            }
+                            break;
+                        }
+                        current = VisualTreeHelper.GetParent(current);
+                    }
+                }
+            }
+
+            // Auto-scroll DockScrollViewer if dragging near edges
+            if (DockScrollViewer != null)
+            {
+                Point ptInScroll = e.GetPosition(DockScrollViewer);
+                if (ptInScroll.X < 25)
+                {
+                    DockScrollViewer.ScrollToHorizontalOffset(Math.Max(0, DockScrollViewer.HorizontalOffset - 12));
+                }
+                else if (ptInScroll.X > DockScrollViewer.ActualWidth - 25)
+                {
+                    DockScrollViewer.ScrollToHorizontalOffset(DockScrollViewer.HorizontalOffset + 12);
+                }
+            }
+        }
+    }
+
+    private void DockAppButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_isDraggingDockApp)
+        {
+            // Drag operation finished: swallow event so Button.Click is NOT executed
+            e.Handled = true;
+            ResetDockAppDrag();
+        }
+        else
+        {
+            ResetDockAppDrag();
+        }
+    }
+
+    protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
+    {
+        if (_isDraggingDockApp)
+        {
+            e.Handled = true;
+            ResetDockAppDrag();
+            return;
+        }
+        base.OnPreviewMouseLeftButtonUp(e);
+    }
+
+    private void ResetDockAppDrag()
+    {
+        if (_draggedItem != null)
+        {
+            _draggedItem.IsDragging = false;
+        }
+
+        if (_draggedButton != null && _draggedButton.IsMouseCaptured)
+        {
+            _draggedButton.ReleaseMouseCapture();
+        }
+
+        _draggedItem = null;
+        _draggedButton = null;
+        _isDraggingDockApp = false;
     }
 
     private void OnClosed(object? sender, EventArgs e)

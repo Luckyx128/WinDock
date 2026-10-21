@@ -177,6 +177,12 @@
                                 <Setter TargetName="FocusBar" Property="Width" Value="6" />
                                 <Setter TargetName="FocusBar" Property="Opacity" Value="0.25" />
                             </DataTrigger>
+                            <!-- If Dragging, semi-translucent with active pill highlight -->
+                            <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                                <Setter TargetName="CardBorder" Property="Opacity" Value="0.65" />
+                                <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                            </DataTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
@@ -717,7 +723,7 @@
 
                 <!-- Requirement (2): UNIFIED DOCK APPS (1x1 40x40 items) -->
                 <!-- Combines user-pinned apps and open windows into one unified collection with real icons & active indicators! -->
-                <ItemsControl ItemsSource="{Binding DockApps}">
+                <ItemsControl x:Name="DockAppsItemsControl" ItemsSource="{Binding DockApps}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
@@ -727,7 +733,10 @@
                         <DataTemplate>
                             <Button Style="{StaticResource UnifiedDockAppSlotStyle}"
                                     Command="{Binding ClickCommand}"
-                                    ToolTip="{Binding Title}">
+                                    ToolTip="{Binding Title}"
+                                    PreviewMouseLeftButtonDown="DockAppButton_PreviewMouseLeftButtonDown"
+                                    PreviewMouseMove="DockAppButton_PreviewMouseMove"
+                                    PreviewMouseLeftButtonUp="DockAppButton_PreviewMouseLeftButtonUp">
                                 
                                 <!-- Right-click dark context menu for any app icon -->
                                 <Button.ContextMenu>
@@ -738,6 +747,25 @@
                                                   Style="{StaticResource DarkMenuItemStyle}">
                                             <MenuItem.Icon>
                                                 <TextBlock Text="📌" FontSize="11" Foreground="{DynamicResource AccentColorBrush}" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+
+                                        <!-- Mover para a Esquerda / Direita -->
+                                        <MenuItem Header="◄ Mover para a Esquerda"
+                                                  Command="{Binding MoveLeftCommand}"
+                                                  Style="{StaticResource DarkMenuItemStyle}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="◀" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <MenuItem Header="► Mover para a Direita"
+                                                  Command="{Binding MoveRightCommand}"
+                                                  Style="{StaticResource DarkMenuItemStyle}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="▶" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
                                             </MenuItem.Icon>
                                         </MenuItem>
 
