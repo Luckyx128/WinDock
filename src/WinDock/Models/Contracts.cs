@@ -70,6 +70,11 @@ public sealed class DockSettings
         ["steam-hub"] = WidgetSize.Size1x1,
         ["steam-storage"] = WidgetSize.Size1x2,
         ["discord"] = WidgetSize.Size1x1,
+        ["discord-voice"] = WidgetSize.Size1x2,
+        ["discord-controls"] = WidgetSize.Size1x2,
+        ["discord-mentions"] = WidgetSize.Size1x1,
+        ["discord-channel"] = WidgetSize.Size1x2,
+        ["discord-hub"] = WidgetSize.Size1x2,
         ["ai"] = WidgetSize.Size1x1,
         ["clock"] = WidgetSize.Size1x2
     };
@@ -193,4 +198,15 @@ public sealed class DiscordStatus
     public bool IsIpcAvailable { get; init; }
     public string ActivitySummary { get; init; } = "Offline";
     public IntPtr MainWindowHandle { get; init; }
+    public int MentionCount { get; init; }
+    public string ChannelName { get; init; } = string.Empty;
+    public string ServerName { get; init; } = string.Empty;
+    public string ServerInitials { get; init; } = "DC";
+    public bool IsInVoiceCall { get; init; }
+    public TimeSpan VoiceCallDuration { get; init; } = TimeSpan.Zero;
+    public string VoiceCallDurationFormatted { get; init; } = "00:00";
+    public bool IsVoiceSpeaking { get; init; }
+    public bool IsMuted { get; init; }
+    public bool IsDeafened { get; init; }
+    public ImageSource? DiscordClientIcon { get; init; }
 }

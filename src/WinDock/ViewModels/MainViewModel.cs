@@ -635,6 +635,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand OpenSteamScreenshotsCommand { get; }
     public ICommand OpenSteamStorageCommand { get; }
     public ICommand FocusDiscordCommand { get; }
+    public ICommand ToggleDiscordMuteCommand { get; }
+    public ICommand ToggleDiscordDeafenCommand { get; }
+    public ICommand DisconnectDiscordVoiceCommand { get; }
+    public ICommand OpenDiscordDMsCommand { get; }
+    public ICommand OpenDiscordSettingsCommand { get; }
     public ICommand ToggleNativeTaskbarCommand { get; }
     public ICommand ToggleBarEdgeCommand { get; }
     public ICommand ToggleWidgetsCommand { get; }
@@ -724,6 +729,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OpenSteamScreenshotsCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/screenshots"));
         OpenSteamStorageCommand = new RelayCommand(() => ExecuteOpenSteamProtocol("steam://open/storage"));
         FocusDiscordCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.FocusOrLaunchDiscord));
+        ToggleDiscordMuteCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.ToggleMute));
+        ToggleDiscordDeafenCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.ToggleDeafen));
+        DisconnectDiscordVoiceCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.DisconnectVoice));
+        OpenDiscordDMsCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.OpenDMs));
+        OpenDiscordSettingsCommand = new RelayCommand(() => SafeInvoke(_discordStatusService.OpenSettings));
         ToggleNativeTaskbarCommand = new RelayCommand(ExecuteToggleNativeTaskbar);
         ToggleBarEdgeCommand = new RelayCommand(ExecuteToggleBarEdge);
         ToggleWidgetsCommand = new RelayCommand(ExecuteToggleWidgets);
@@ -1044,19 +1054,89 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Size = DockWidgetSize.Size1x2
         });
 
-        // 2. DISCORD WIDGET
+        // 2. DISCORD WIDGETS (6 Módulos Oficiais)
         AddWidget(new DockWidgetItem
         {
             Id = "discord",
-            Title = "Discord Presence",
+            Title = "Discord: Sessão & Status",
             IconGlyph = "💬",
-            Description = "Presença do Discord e atividade em execução",
+            Description = "Status da sessão, presença rica e atalho de ativação",
             AppGroup = "Discord",
             AppIconGlyph = "💬",
-            AppGroupDescription = "Status de voz e presença rica do Discord",
+            AppGroupDescription = "Integração completa com chamadas de voz e atividade",
             AppGroupOrder = 2,
             IsVisible = false,
             Size = DockWidgetSize.Size1x1
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "discord-voice",
+            Title = "Discord: Chamada de Voz",
+            IconGlyph = "🎧",
+            Description = "Detecção de chamada de voz ativa com cronômetro em tempo real",
+            AppGroup = "Discord",
+            AppIconGlyph = "💬",
+            AppGroupDescription = "Integração completa com chamadas de voz e atividade",
+            AppGroupOrder = 2,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "discord-controls",
+            Title = "Discord: Controles de Voz",
+            IconGlyph = "🎙",
+            Description = "Controles rápidos para mutar microfone e ensurdecer áudio",
+            AppGroup = "Discord",
+            AppIconGlyph = "💬",
+            AppGroupDescription = "Integração completa com chamadas de voz e atividade",
+            AppGroupOrder = 2,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "discord-mentions",
+            Title = "Discord: Menções & Não Lidas",
+            IconGlyph = "🔴",
+            Description = "Contador de menções pendentes com badge numérico",
+            AppGroup = "Discord",
+            AppIconGlyph = "💬",
+            AppGroupDescription = "Integração completa com chamadas de voz e atividade",
+            AppGroupOrder = 2,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x1
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "discord-channel",
+            Title = "Discord: Canal & Servidor",
+            IconGlyph = "🏷",
+            Description = "Canal e servidor em foco com pílula de iniciais",
+            AppGroup = "Discord",
+            AppIconGlyph = "💬",
+            AppGroupDescription = "Integração completa com chamadas de voz e atividade",
+            AppGroupOrder = 2,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        AddWidget(new DockWidgetItem
+        {
+            Id = "discord-hub",
+            Title = "Discord: Atalhos Rápidos",
+            IconGlyph = "⚡",
+            Description = "Acesso rápido com links diretos para DMs, Amigos e Ajustes de Voz",
+            AppGroup = "Discord",
+            AppIconGlyph = "💬",
+            AppGroupDescription = "Integração completa com chamadas de voz e atividade",
+            AppGroupOrder = 2,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
         });
 
         // 3. MÍDIA & YOUTUBE WIDGET
@@ -1607,6 +1687,26 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(IsDiscordIpcAvailable));
             OnPropertyChanged(nameof(DiscordActivityText));
             OnPropertyChanged(nameof(DiscordSubText));
+            OnPropertyChanged(nameof(DiscordMentionCount));
+            OnPropertyChanged(nameof(HasDiscordMentions));
+            OnPropertyChanged(nameof(DiscordMentionBadgeText));
+            OnPropertyChanged(nameof(DiscordChannelName));
+            OnPropertyChanged(nameof(DiscordServerName));
+            OnPropertyChanged(nameof(DiscordServerInitials));
+            OnPropertyChanged(nameof(IsDiscordInVoice));
+            OnPropertyChanged(nameof(DiscordVoiceDurationText));
+            OnPropertyChanged(nameof(DiscordVoiceStatusText));
+            OnPropertyChanged(nameof(IsDiscordVoiceSpeaking));
+            OnPropertyChanged(nameof(IsDiscordMuted));
+            OnPropertyChanged(nameof(IsDiscordDeafened));
+            OnPropertyChanged(nameof(DiscordMuteTooltip));
+            OnPropertyChanged(nameof(DiscordDeafenTooltip));
+            if (value.DiscordClientIcon != null && _discordClientIcon == null)
+            {
+                _discordClientIcon = value.DiscordClientIcon;
+                OnPropertyChanged(nameof(DiscordClientIcon));
+                OnPropertyChanged(nameof(HasDiscordClientIcon));
+            }
         }
     }
 
@@ -1615,9 +1715,26 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string DiscordActivityText => string.IsNullOrWhiteSpace(DiscordStatus.ActivitySummary)
         ? (DiscordStatus.IsRunning ? "Discord Ativo" : "Offline")
         : DiscordStatus.ActivitySummary;
-    public string DiscordSubText => DiscordStatus.IsIpcAvailable
-        ? "Rich Presence IPC conectado"
-        : (DiscordStatus.IsRunning ? "Processo ativo em 2º plano" : "Clique para abrir o Discord");
+    public string DiscordSubText => DiscordStatus.IsInVoiceCall
+        ? $"Em chamada · {DiscordStatus.VoiceCallDurationFormatted}"
+        : (DiscordStatus.IsIpcAvailable
+            ? "Rich Presence IPC conectado"
+            : (DiscordStatus.IsRunning ? "Processo ativo em 2º plano" : "Clique para abrir o Discord"));
+
+    public int DiscordMentionCount => DiscordStatus.MentionCount;
+    public bool HasDiscordMentions => DiscordStatus.MentionCount > 0;
+    public string DiscordMentionBadgeText => DiscordStatus.MentionCount > 99 ? "99+" : DiscordStatus.MentionCount.ToString();
+    public string DiscordChannelName => string.IsNullOrWhiteSpace(DiscordStatus.ChannelName) ? "#geral" : DiscordStatus.ChannelName;
+    public string DiscordServerName => string.IsNullOrWhiteSpace(DiscordStatus.ServerName) ? "Discord" : DiscordStatus.ServerName;
+    public string DiscordServerInitials => string.IsNullOrWhiteSpace(DiscordStatus.ServerInitials) ? "DC" : DiscordStatus.ServerInitials;
+    public bool IsDiscordInVoice => DiscordStatus.IsInVoiceCall;
+    public string DiscordVoiceDurationText => DiscordStatus.IsInVoiceCall ? DiscordStatus.VoiceCallDurationFormatted : "00:00";
+    public string DiscordVoiceStatusText => DiscordStatus.IsInVoiceCall ? $"Em call · {DiscordStatus.VoiceCallDurationFormatted}" : "Fora de call";
+    public bool IsDiscordVoiceSpeaking => DiscordStatus.IsVoiceSpeaking;
+    public bool IsDiscordMuted => DiscordStatus.IsMuted;
+    public bool IsDiscordDeafened => DiscordStatus.IsDeafened;
+    public string DiscordMuteTooltip => DiscordStatus.IsMuted ? "Microfone Mutado (Clique para Desmutar)" : "Microfone Ativo (Clique para Mutar)";
+    public string DiscordDeafenTooltip => DiscordStatus.IsDeafened ? "Áudio Ensurdecido (Clique para Ativar)" : "Áudio Ativo (Clique para Ensurdecer)";
 
     public ThemePreset CurrentTheme
     {
@@ -1715,6 +1832,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         // Requirement (3): Fullscreen auto-hide check
         CheckFullscreenState();
+
+        // Live update Discord voice duration if in call
+        if (DiscordStatus.IsInVoiceCall)
+        {
+            OnPropertyChanged(nameof(DiscordVoiceDurationText));
+            OnPropertyChanged(nameof(DiscordVoiceStatusText));
+        }
 
         // Requirement (2): Refresh Open Windows & Unified DockApps
         RefreshOpenWindowsAndDockApps();

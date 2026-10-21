@@ -73,4 +73,9 @@ public interface IDiscordStatusService
 {
     DiscordStatus GetStatus();
     void FocusOrLaunchDiscord();
+    void ToggleMute();
+    void ToggleDeafen();
+    void DisconnectVoice();
+    void OpenDMs();
+    void OpenSettings();
 }

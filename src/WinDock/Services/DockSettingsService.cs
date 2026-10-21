@@ -296,6 +296,11 @@ public sealed class DockSettingsService : IDockSettingsService
                 ["steam-hub"] = WidgetSize.Size1x1,
                 ["steam-storage"] = WidgetSize.Size1x2,
                 ["discord"] = WidgetSize.Size1x1,
+                ["discord-voice"] = WidgetSize.Size1x2,
+                ["discord-controls"] = WidgetSize.Size1x2,
+                ["discord-mentions"] = WidgetSize.Size1x1,
+                ["discord-channel"] = WidgetSize.Size1x2,
+                ["discord-hub"] = WidgetSize.Size1x2,
                 ["ai"] = WidgetSize.Size1x1,
                 ["clock"] = WidgetSize.Size1x2
             },
@@ -340,6 +345,11 @@ public sealed class DockSettingsService : IDockSettingsService
             settings.WidgetSizes["steam-hub"] = WidgetSize.Size1x1;
             settings.WidgetSizes["steam-storage"] = WidgetSize.Size1x2;
             settings.WidgetSizes["discord"] = WidgetSize.Size1x1;
+            settings.WidgetSizes["discord-voice"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["discord-controls"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["discord-mentions"] = WidgetSize.Size1x1;
+            settings.WidgetSizes["discord-channel"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["discord-hub"] = WidgetSize.Size1x2;
             settings.WidgetSizes["ai"] = WidgetSize.Size1x1;
             settings.WidgetSizes["clock"] = WidgetSize.Size1x2;
         }
