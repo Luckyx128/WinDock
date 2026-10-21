@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using WinDock.Models;
+using Color = System.Windows.Media.Color;
+using ColorConverter = System.Windows.Media.ColorConverter;
+using Application = System.Windows.Application;
 
 namespace WinDock.ViewModels;
 
@@ -39,6 +45,168 @@ public sealed class RelayCommand : ICommand
     }
 }
 
+public enum DockWidgetSize
+{
+    Size1x1 = 1,
+    Size1x2 = 2,
+    Size1x3 = 3
+}
+
+public sealed class DockWidgetItem : INotifyPropertyChanged
+{
+    private bool _isVisible;
+    private DockWidgetSize _size;
+
+    public required string Id { get; init; }
+    public required string Title { get; init; }
+    public required string IconGlyph { get; init; }
+    public required string Description { get; init; }
+
+    public bool IsVisible
+    {
+        get => _isVisible;
+        set
+        {
+            if (_isVisible != value)
+            {
+                _isVisible = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public DockWidgetSize Size
+    {
+        get => _size;
+        set
+        {
+            if (_size != value)
+            {
+                _size = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(TargetWidth));
+                OnPropertyChanged(nameof(IsSize1x1));
+                OnPropertyChanged(nameof(IsSize1x2));
+                OnPropertyChanged(nameof(IsSize1x3));
+                OnPropertyChanged(nameof(SizeLabel));
+            }
+        }
+    }
+
+    public double TargetWidth => Size switch
+    {
+        DockWidgetSize.Size1x1 => 44.0,
+        DockWidgetSize.Size1x2 => 98.0,
+        DockWidgetSize.Size1x3 => 156.0,
+        _ => 44.0
+    };
+
+    public bool IsSize1x1 => Size == DockWidgetSize.Size1x1;
+    public bool IsSize1x2 => Size == DockWidgetSize.Size1x2;
+    public bool IsSize1x3 => Size == DockWidgetSize.Size1x3;
+    public string SizeLabel => Size switch
+    {
+        DockWidgetSize.Size1x1 => "1x1 (44px)",
+        DockWidgetSize.Size1x2 => "1x2 (98px)",
+        DockWidgetSize.Size1x3 => "1x3 (156px)",
+        _ => "1x1"
+    };
+
+    public ICommand SetSize1x1Command { get; }
+    public ICommand SetSize1x2Command { get; }
+    public ICommand SetSize1x3Command { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public DockWidgetItem()
+    {
+        SetSize1x1Command = new RelayCommand(() => Size = DockWidgetSize.Size1x1);
+        SetSize1x2Command = new RelayCommand(() => Size = DockWidgetSize.Size1x2);
+        SetSize1x3Command = new RelayCommand(() => Size = DockWidgetSize.Size1x3);
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+    }
+}
+
+public sealed class PinnedShortcutItem : INotifyPropertyChanged
+{
+    private bool _isPinned = true;
+    private bool _isRunning;
+
+    public string Id { get; init; } = Guid.NewGuid().ToString();
+    public required string Name { get; init; }
+    public required string TargetPath { get; init; }
+    public string Arguments { get; init; } = string.Empty;
+    public string IconGlyph { get; init; } = "🚀";
+    public ImageSource? CustomIcon { get; set; }
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set
+        {
+            if (_isPinned != value)
+            {
+                _isPinned = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsRunning
+    {
+        get => _isRunning;
+        set
+        {
+            if (_isRunning != value)
+            {
+                _isRunning = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public ICommand LaunchCommand { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public PinnedShortcutItem(Action<PinnedShortcutItem> onLaunch)
+    {
+        LaunchCommand = new RelayCommand(() => onLaunch(this));
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+    }
+}
+
+public sealed class ThemePreset
+{
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Description { get; init; }
+    public required Color BarBackgroundColor { get; init; }
+    public required Color BarBorderColor { get; init; }
+    public required Color PillBackgroundColor { get; init; }
+    public required Color PillHoverColor { get; init; }
+    public required Color PillActiveColor { get; init; }
+    public required Color WindowBackgroundColor { get; init; }
+    public required Color WindowCardColor { get; init; }
+    public required Color WindowBorderColor { get; init; }
+    public required Color DefaultAccent { get; init; }
+}
+
+public sealed class AccentColorOption
+{
+    public required string Name { get; init; }
+    public required Color Color { get; init; }
+    public SolidColorBrush Brush => new(Color);
+}
+
 public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly IAppBarService _appBarService;
@@ -56,10 +224,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private bool _isDisposed;
 
     private IntPtr _excludeWindowHandle;
-    private BarEdge _currentEdge = BarEdge.Top;
+    private BarEdge _currentEdge = BarEdge.Bottom;
     private bool _areWidgetsVisible = true;
 
-    private string _currentTimeText = DateTime.Now.ToString("HH:mm:ss");
+    private string _currentTimeText = DateTime.Now.ToString("HH:mm");
+    private string _currentSecondsText = DateTime.Now.ToString("ss");
     private string _currentDateText = DateTime.Now.ToString("ddd, dd MMM");
     private string _greetingText = GetGreeting();
 
@@ -70,9 +239,46 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private AiUsageSnapshot _aiUsage = new();
     private DiscordStatus _discordStatus = new();
 
+    private ThemePreset _currentTheme;
+    private AccentColorOption _currentAccent;
+
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? EdgeChanged;
     public event EventHandler? WidgetsVisibilityChanged;
+    public event Action? OpenCustomizationRequested;
+
+    public ObservableCollection<AppWindowInfo> OpenWindows { get; } = new();
+    public ObservableCollection<PinnedShortcutItem> PinnedShortcuts { get; } = new();
+    public ObservableCollection<DockWidgetItem> DockWidgets { get; } = new();
+    public ObservableCollection<ThemePreset> AvailableThemes { get; } = new();
+    public ObservableCollection<AccentColorOption> AvailableAccents { get; } = new();
+    public ObservableCollection<SteamGameInfo> InstalledGames { get; } = new();
+    public ObservableCollection<AiProviderUsage> AiProviders { get; } = new();
+
+    public ICommand WindowClickCommand { get; }
+    public ICommand PlayPauseCommand { get; }
+    public ICommand NextTrackCommand { get; }
+    public ICommand PreviousTrackCommand { get; }
+    public ICommand OpenYouTubeCommand { get; }
+    public ICommand LaunchSteamGameCommand { get; }
+    public ICommand LaunchSelectedSteamGameCommand { get; }
+    public ICommand OpenSteamCommand { get; }
+    public ICommand FocusDiscordCommand { get; }
+    public ICommand ToggleNativeTaskbarCommand { get; }
+    public ICommand ToggleBarEdgeCommand { get; }
+    public ICommand ToggleWidgetsCommand { get; }
+    public ICommand RefreshAllCommand { get; }
+    public ICommand ExitAppCommand { get; }
+    public ICommand OpenCustomizationCommand { get; }
+
+    public ICommand AddCustomShortcutCommand { get; }
+    public ICommand RemoveShortcutCommand { get; }
+    public ICommand MoveShortcutUpCommand { get; }
+    public ICommand MoveShortcutDownCommand { get; }
+    public ICommand MoveWidgetUpCommand { get; }
+    public ICommand MoveWidgetDownCommand { get; }
+    public ICommand ApplyThemeCommand { get; }
+    public ICommand ApplyAccentCommand { get; }
 
     public MainViewModel(
         IAppBarService appBarService,
@@ -93,10 +299,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _aiUsageService = aiUsageService;
         _discordStatusService = discordStatusService;
 
-        OpenWindows = new ObservableCollection<AppWindowInfo>();
-        InstalledGames = new ObservableCollection<SteamGameInfo>();
-        AiProviders = new ObservableCollection<AiProviderUsage>();
-
+        // Base Commands
         WindowClickCommand = new RelayCommand(ExecuteWindowClick);
         PlayPauseCommand = new RelayCommand(ExecutePlayPause);
         NextTrackCommand = new RelayCommand(ExecuteNextTrack);
@@ -111,7 +314,28 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ToggleWidgetsCommand = new RelayCommand(ExecuteToggleWidgets);
         RefreshAllCommand = new RelayCommand(() => _ = RefreshTelemetryAsync());
         ExitAppCommand = new RelayCommand(ExecuteExitApp);
+        OpenCustomizationCommand = new RelayCommand(() => OpenCustomizationRequested?.Invoke());
 
+        // Customization Commands
+        AddCustomShortcutCommand = new RelayCommand(ExecuteAddCustomShortcut);
+        RemoveShortcutCommand = new RelayCommand(ExecuteRemoveShortcut);
+        MoveShortcutUpCommand = new RelayCommand(ExecuteMoveShortcutUp);
+        MoveShortcutDownCommand = new RelayCommand(ExecuteMoveShortcutDown);
+        MoveWidgetUpCommand = new RelayCommand(ExecuteMoveWidgetUp);
+        MoveWidgetDownCommand = new RelayCommand(ExecuteMoveWidgetDown);
+        ApplyThemeCommand = new RelayCommand(ExecuteApplyTheme);
+        ApplyAccentCommand = new RelayCommand(ExecuteApplyAccent);
+
+        // Initialize Themes & Accents
+        InitializeThemesAndAccents();
+        _currentTheme = AvailableThemes[0];
+        _currentAccent = AvailableAccents[0];
+
+        // Initialize Pinned Shortcuts & Modular Dock Widgets
+        InitializePinnedShortcuts();
+        InitializeDockWidgets();
+
+        // Start Fast & Telemetry Timers
         _fastTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromMilliseconds(800)
@@ -130,9 +354,188 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _ = RefreshTelemetryAsync();
     }
 
-    public ObservableCollection<AppWindowInfo> OpenWindows { get; }
-    public ObservableCollection<SteamGameInfo> InstalledGames { get; }
-    public ObservableCollection<AiProviderUsage> AiProviders { get; }
+    private void InitializeThemesAndAccents()
+    {
+        AvailableAccents.Add(new AccentColorOption { Name = "Ciano Elétrico", Color = (Color)ColorConverter.ConvertFromString("#38BDF8") });
+        AvailableAccents.Add(new AccentColorOption { Name = "Esmeralda Neon", Color = (Color)ColorConverter.ConvertFromString("#10B981") });
+        AvailableAccents.Add(new AccentColorOption { Name = "Roxo Cósmico", Color = (Color)ColorConverter.ConvertFromString("#A855F7") });
+        AvailableAccents.Add(new AccentColorOption { Name = "Rosa Choque", Color = (Color)ColorConverter.ConvertFromString("#F43F5E") });
+        AvailableAccents.Add(new AccentColorOption { Name = "Âmbar Solar", Color = (Color)ColorConverter.ConvertFromString("#F59E0B") });
+        AvailableAccents.Add(new AccentColorOption { Name = "Azul Safira", Color = (Color)ColorConverter.ConvertFromString("#3B82F6") });
+        AvailableAccents.Add(new AccentColorOption { Name = "Laranja Chama", Color = (Color)ColorConverter.ConvertFromString("#F97316") });
+
+        AvailableThemes.Add(new ThemePreset
+        {
+            Id = "dark_glass",
+            Name = "Dark Glass (Padrão)",
+            Description = "Fundo escuro profundo com blur e reflexos sutis",
+            BarBackgroundColor = (Color)ColorConverter.ConvertFromString("#111318"),
+            BarBorderColor = (Color)ColorConverter.ConvertFromString("#223344"),
+            PillBackgroundColor = (Color)ColorConverter.ConvertFromString("#1A1E29"),
+            PillHoverColor = (Color)ColorConverter.ConvertFromString("#262F40"),
+            PillActiveColor = (Color)ColorConverter.ConvertFromString("#2E3A50"),
+            WindowBackgroundColor = (Color)ColorConverter.ConvertFromString("#0E1117"),
+            WindowCardColor = (Color)ColorConverter.ConvertFromString("#161B24"),
+            WindowBorderColor = (Color)ColorConverter.ConvertFromString("#2B3442"),
+            DefaultAccent = (Color)ColorConverter.ConvertFromString("#38BDF8")
+        });
+
+        AvailableThemes.Add(new ThemePreset
+        {
+            Id = "oled_pure",
+            Name = "OLED Blackout",
+            Description = "Preto absoluto com alto contraste para telas OLED",
+            BarBackgroundColor = (Color)ColorConverter.ConvertFromString("#000000"),
+            BarBorderColor = (Color)ColorConverter.ConvertFromString("#1A1A1A"),
+            PillBackgroundColor = (Color)ColorConverter.ConvertFromString("#0F0F0F"),
+            PillHoverColor = (Color)ColorConverter.ConvertFromString("#1E1E1E"),
+            PillActiveColor = (Color)ColorConverter.ConvertFromString("#2A2A2A"),
+            WindowBackgroundColor = (Color)ColorConverter.ConvertFromString("#050505"),
+            WindowCardColor = (Color)ColorConverter.ConvertFromString("#111111"),
+            WindowBorderColor = (Color)ColorConverter.ConvertFromString("#222222"),
+            DefaultAccent = (Color)ColorConverter.ConvertFromString("#10B981")
+        });
+
+        AvailableThemes.Add(new ThemePreset
+        {
+            Id = "cyberpunk",
+            Name = "Cyberpunk Synth",
+            Description = "Paleta vibrante com tons de neon, violeta e ciano",
+            BarBackgroundColor = (Color)ColorConverter.ConvertFromString("#0F0D1C"),
+            BarBorderColor = (Color)ColorConverter.ConvertFromString("#382352"),
+            PillBackgroundColor = (Color)ColorConverter.ConvertFromString("#1B172E"),
+            PillHoverColor = (Color)ColorConverter.ConvertFromString("#2D264E"),
+            PillActiveColor = (Color)ColorConverter.ConvertFromString("#3B3166"),
+            WindowBackgroundColor = (Color)ColorConverter.ConvertFromString("#0A0914"),
+            WindowCardColor = (Color)ColorConverter.ConvertFromString("#161226"),
+            WindowBorderColor = (Color)ColorConverter.ConvertFromString("#3D295C"),
+            DefaultAccent = (Color)ColorConverter.ConvertFromString("#F43F5E")
+        });
+
+        AvailableThemes.Add(new ThemePreset
+        {
+            Id = "midnight_blue",
+            Name = "Midnight Blue",
+            Description = "Azul marinho noturno elegante e sóbrio",
+            BarBackgroundColor = (Color)ColorConverter.ConvertFromString("#0B1120"),
+            BarBorderColor = (Color)ColorConverter.ConvertFromString("#1E293B"),
+            PillBackgroundColor = (Color)ColorConverter.ConvertFromString("#131C31"),
+            PillHoverColor = (Color)ColorConverter.ConvertFromString("#1E2D4E"),
+            PillActiveColor = (Color)ColorConverter.ConvertFromString("#253860"),
+            WindowBackgroundColor = (Color)ColorConverter.ConvertFromString("#070B14"),
+            WindowCardColor = (Color)ColorConverter.ConvertFromString("#0F172A"),
+            WindowBorderColor = (Color)ColorConverter.ConvertFromString("#1E293B"),
+            DefaultAccent = (Color)ColorConverter.ConvertFromString("#3B82F6")
+        });
+    }
+
+    private void InitializePinnedShortcuts()
+    {
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = "Explorador de Arquivos",
+            TargetPath = "explorer.exe",
+            IconGlyph = "📁"
+        });
+
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = "Navegador de Internet",
+            TargetPath = "https://www.google.com",
+            IconGlyph = "🌐"
+        });
+
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = "Terminal / PowerShell",
+            TargetPath = "powershell.exe",
+            IconGlyph = "💻"
+        });
+
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = "Discord",
+            TargetPath = "discord",
+            IconGlyph = "💬"
+        });
+
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = "Steam",
+            TargetPath = "steam",
+            IconGlyph = "🎮"
+        });
+
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = "Bloco de Notas",
+            TargetPath = "notepad.exe",
+            IconGlyph = "📝"
+        });
+    }
+
+    private void InitializeDockWidgets()
+    {
+        DockWidgets.Add(new DockWidgetItem
+        {
+            Id = "hardware",
+            Title = "Monitor de Hardware",
+            IconGlyph = "⚡",
+            Description = "Gauges de CPU, GPU e memória RAM em tempo real",
+            IsVisible = true,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        DockWidgets.Add(new DockWidgetItem
+        {
+            Id = "media",
+            Title = "Mídia & YouTube",
+            IconGlyph = "▶",
+            Description = "Player com reprodução ativa, YouTube e controles de faixa",
+            IsVisible = true,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        DockWidgets.Add(new DockWidgetItem
+        {
+            Id = "steam",
+            Title = "Steam Game Status",
+            IconGlyph = "🎮",
+            Description = "Status da Steam e launcher rápido de jogos",
+            IsVisible = true,
+            Size = DockWidgetSize.Size1x1
+        });
+
+        DockWidgets.Add(new DockWidgetItem
+        {
+            Id = "discord",
+            Title = "Discord Presence",
+            IconGlyph = "💬",
+            Description = "Presença do Discord e atividade em execução",
+            IsVisible = true,
+            Size = DockWidgetSize.Size1x1
+        });
+
+        DockWidgets.Add(new DockWidgetItem
+        {
+            Id = "ai",
+            Title = "Resumo IA",
+            IconGlyph = "✨",
+            Description = "Contador de requisições de IA e modelos ativos",
+            IsVisible = true,
+            Size = DockWidgetSize.Size1x1
+        });
+
+        DockWidgets.Add(new DockWidgetItem
+        {
+            Id = "clock",
+            Title = "Relógio & Calendário",
+            IconGlyph = "🕒",
+            Description = "Horário preciso, data e dia da semana",
+            IsVisible = true,
+            Size = DockWidgetSize.Size1x2
+        });
+    }
 
     public IntPtr ExcludeWindowHandle
     {
@@ -158,11 +561,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 _currentEdge = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(EdgeLabel));
+                OnPropertyChanged(nameof(IsAtBottom));
                 EdgeChanged?.Invoke(this, EventArgs.Empty);
             }
         }
     }
 
+    public bool IsAtBottom => CurrentEdge == BarEdge.Bottom;
     public string EdgeLabel => CurrentEdge == BarEdge.Top ? "Topo" : "Base";
 
     public bool AreWidgetsVisible
@@ -180,16 +585,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public string WidgetsToggleText => AreWidgetsVisible ? "Widgets: ON" : "Widgets: OFF";
-
+    public string WidgetsToggleText => AreWidgetsVisible ? "Widgets ON" : "Widgets OFF";
     public bool IsNativeTaskbarHidden => _nativeTaskbarService.IsNativeTaskbarHidden;
-
-    public string NativeTaskbarStatusText => IsNativeTaskbarHidden ? "WinBar: Oculta" : "WinBar: Visível";
+    public string NativeTaskbarStatusText => IsNativeTaskbarHidden ? "WinBar Oculta" : "WinBar Visível";
 
     public string CurrentTimeText
     {
         get => _currentTimeText;
         private set => SetField(ref _currentTimeText, value);
+    }
+
+    public string CurrentSecondsText
+    {
+        get => _currentSecondsText;
+        private set => SetField(ref _currentSecondsText, value);
     }
 
     public string CurrentDateText
@@ -281,7 +690,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         : (SteamStatus.IsRunning ? "Steam Online" : (SteamStatus.IsInstalled ? "Steam Pronto" : "Steam N/D"));
     public string SteamSubText => IsSteamGameRunning
         ? $"Em execução (AppID {SteamStatus.RunningAppId})"
-        : $"{InstalledGames.Count} jogo(s) detectado(s) localmente";
+        : $"{InstalledGames.Count} jogo(s) local(is)";
 
     public SteamGameInfo? SelectedSteamGame
     {
@@ -331,22 +740,80 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         : DiscordStatus.ActivitySummary;
     public string DiscordSubText => DiscordStatus.IsIpcAvailable
         ? "Rich Presence IPC conectado"
-        : (DiscordStatus.IsRunning ? "Processo ativo em segundo plano" : "Clique para iniciar o Discord");
+        : (DiscordStatus.IsRunning ? "Processo ativo em 2º plano" : "Clique para abrir o Discord");
 
-    public ICommand WindowClickCommand { get; }
-    public ICommand PlayPauseCommand { get; }
-    public ICommand NextTrackCommand { get; }
-    public ICommand PreviousTrackCommand { get; }
-    public ICommand OpenYouTubeCommand { get; }
-    public ICommand LaunchSteamGameCommand { get; }
-    public ICommand LaunchSelectedSteamGameCommand { get; }
-    public ICommand OpenSteamCommand { get; }
-    public ICommand FocusDiscordCommand { get; }
-    public ICommand ToggleNativeTaskbarCommand { get; }
-    public ICommand ToggleBarEdgeCommand { get; }
-    public ICommand ToggleWidgetsCommand { get; }
-    public ICommand RefreshAllCommand { get; }
-    public ICommand ExitAppCommand { get; }
+    public ThemePreset CurrentTheme
+    {
+        get => _currentTheme;
+        set
+        {
+            if (_currentTheme != value && value != null)
+            {
+                _currentTheme = value;
+                OnPropertyChanged();
+                ApplyTheme(value, _currentAccent?.Color);
+            }
+        }
+    }
+
+    public AccentColorOption CurrentAccent
+    {
+        get => _currentAccent;
+        set
+        {
+            if (_currentAccent != value && value != null)
+            {
+                _currentAccent = value;
+                OnPropertyChanged();
+                ApplyTheme(_currentTheme, value.Color);
+            }
+        }
+    }
+
+    public void ApplyTheme(ThemePreset theme, Color? customAccent = null)
+    {
+        try
+        {
+            var res = Application.Current?.Resources;
+            if (res == null) return;
+
+            Color accent = customAccent ?? theme.DefaultAccent;
+
+            res["BarBackgroundBrush"] = new SolidColorBrush(theme.BarBackgroundColor);
+            res["BarBorderBrush"] = new SolidColorBrush(theme.BarBorderColor);
+            res["PillBackgroundBrush"] = new SolidColorBrush(theme.PillBackgroundColor);
+            res["PillHoverBrush"] = new SolidColorBrush(theme.PillHoverColor);
+            res["PillActiveBrush"] = new SolidColorBrush(theme.PillActiveColor);
+
+            res["WindowBackgroundBrush"] = new SolidColorBrush(theme.WindowBackgroundColor);
+            res["WindowCardBrush"] = new SolidColorBrush(theme.WindowCardColor);
+            res["WindowCardHoverBrush"] = new SolidColorBrush(theme.PillHoverColor);
+            res["WindowBorderBrush"] = new SolidColorBrush(theme.WindowBorderColor);
+
+            res["AccentColorBrush"] = new SolidColorBrush(accent);
+            res["AccentCyanBrush"] = new SolidColorBrush(accent);
+        }
+        catch
+        {
+            // Ignore resource update issues during shutdown
+        }
+    }
+
+    private void ExecuteApplyTheme(object? parameter)
+    {
+        if (parameter is ThemePreset theme)
+        {
+            CurrentTheme = theme;
+        }
+    }
+
+    private void ExecuteApplyAccent(object? parameter)
+    {
+        if (parameter is AccentColorOption accent)
+        {
+            CurrentAccent = accent;
+        }
+    }
 
     private void RefreshFastState()
     {
@@ -356,11 +823,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
 
         var now = DateTime.Now;
-        CurrentTimeText = now.ToString("HH:mm:ss");
+        CurrentTimeText = now.ToString("HH:mm");
+        CurrentSecondsText = now.ToString("ss");
         CurrentDateText = now.ToString("ddd, dd MMM");
         GreetingText = GetGreeting();
 
         RefreshOpenWindows();
+        UpdatePinnedShortcutsRunningState();
     }
 
     public void RefreshOpenWindows()
@@ -413,6 +882,18 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                && a.IsFocused == b.IsFocused
                && a.IsMinimized == b.IsMinimized
                && string.Equals(a.ProcessName, b.ProcessName, StringComparison.Ordinal);
+    }
+
+    private void UpdatePinnedShortcutsRunningState()
+    {
+        var openNames = OpenWindows.Select(w => w.ProcessName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var shortcut in PinnedShortcuts)
+        {
+            string cleanName = Path.GetFileNameWithoutExtension(shortcut.TargetPath);
+            shortcut.IsRunning = openNames.Contains(cleanName)
+                || (shortcut.TargetPath.Contains("discord", StringComparison.OrdinalIgnoreCase) && DiscordStatus.IsRunning)
+                || (shortcut.TargetPath.Contains("steam", StringComparison.OrdinalIgnoreCase) && SteamStatus.IsRunning);
+        }
     }
 
     private async Task RefreshTelemetryAsync()
@@ -517,6 +998,108 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    private void LaunchShortcut(PinnedShortcutItem shortcut)
+    {
+        try
+        {
+            if (string.Equals(shortcut.TargetPath, "discord", StringComparison.OrdinalIgnoreCase))
+            {
+                _discordStatusService.FocusOrLaunchDiscord();
+                return;
+            }
+            if (string.Equals(shortcut.TargetPath, "steam", StringComparison.OrdinalIgnoreCase))
+            {
+                _steamIntegrationService.OpenSteam();
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(shortcut.TargetPath, shortcut.Arguments)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Ignore process start failure
+        }
+    }
+
+    public void AddShortcut(string name, string targetPath, string arguments = "", string glyph = "🚀")
+    {
+        if (string.IsNullOrWhiteSpace(targetPath)) return;
+        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        {
+            Name = string.IsNullOrWhiteSpace(name) ? Path.GetFileNameWithoutExtension(targetPath) : name,
+            TargetPath = targetPath,
+            Arguments = arguments,
+            IconGlyph = glyph
+        });
+    }
+
+    private void ExecuteAddCustomShortcut(object? parameter)
+    {
+        if (parameter is string path && !string.IsNullOrWhiteSpace(path))
+        {
+            AddShortcut(Path.GetFileNameWithoutExtension(path), path);
+        }
+    }
+
+    private void ExecuteRemoveShortcut(object? parameter)
+    {
+        if (parameter is PinnedShortcutItem item)
+        {
+            PinnedShortcuts.Remove(item);
+        }
+    }
+
+    private void ExecuteMoveShortcutUp(object? parameter)
+    {
+        if (parameter is PinnedShortcutItem item)
+        {
+            int idx = PinnedShortcuts.IndexOf(item);
+            if (idx > 0)
+            {
+                PinnedShortcuts.Move(idx, idx - 1);
+            }
+        }
+    }
+
+    private void ExecuteMoveShortcutDown(object? parameter)
+    {
+        if (parameter is PinnedShortcutItem item)
+        {
+            int idx = PinnedShortcuts.IndexOf(item);
+            if (idx >= 0 && idx < PinnedShortcuts.Count - 1)
+            {
+                PinnedShortcuts.Move(idx, idx + 1);
+            }
+        }
+    }
+
+    private void ExecuteMoveWidgetUp(object? parameter)
+    {
+        if (parameter is DockWidgetItem item)
+        {
+            int idx = DockWidgets.IndexOf(item);
+            if (idx > 0)
+            {
+                DockWidgets.Move(idx, idx - 1);
+            }
+        }
+    }
+
+    private void ExecuteMoveWidgetDown(object? parameter)
+    {
+        if (parameter is DockWidgetItem item)
+        {
+            int idx = DockWidgets.IndexOf(item);
+            if (idx >= 0 && idx < DockWidgets.Count - 1)
+            {
+                DockWidgets.Move(idx, idx + 1);
+            }
+        }
+    }
+
     private void ExecutePlayPause()
     {
         SafeInvoke(_mediaIntegrationService.PlayPause);
@@ -611,7 +1194,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private void ExecuteExitApp()
     {
         SafeInvoke(_nativeTaskbarService.ShowNativeTaskbar);
-        System.Windows.Application.Current?.Shutdown();
+        Application.Current?.Shutdown();
     }
 
     private static void SafeInvoke(Action action)

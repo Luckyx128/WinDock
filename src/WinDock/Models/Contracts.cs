@@ -10,6 +10,56 @@ public enum BarEdge
     Bottom = 3
 }
 
+public enum WidgetSize
+{
+    Size1x1 = 1,
+    Size1x2 = 2,
+    Size1x3 = 3
+}
+
+public sealed class DockShortcut
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string Title { get; set; } = string.Empty;
+    public string TargetPath { get; set; } = string.Empty;
+    public string Arguments { get; set; } = string.Empty;
+    public string? IconPath { get; set; }
+    public bool IsCustomIcon { get; set; }
+}
+
+public sealed class DockTheme
+{
+    public string Id { get; set; } = "default-dark";
+    public string Name { get; set; } = "Dark Modern";
+    public string BackgroundColorHex { get; set; } = "#E61A1C23";
+    public string BorderColorHex { get; set; } = "#33FFFFFF";
+    public string AccentColorHex { get; set; } = "#007ACC";
+    public string TextColorHex { get; set; } = "#FFFFFFFF";
+    public string CardBackgroundColorHex { get; set; } = "#262A35";
+    public double BlurRadius { get; set; } = 20.0;
+    public double Opacity { get; set; } = 0.95;
+}
+
+public sealed class DockSettings
+{
+    public BarEdge Edge { get; set; } = BarEdge.Bottom;
+    public double BarHeightDip { get; set; } = 48.0;
+    public bool AutoHideNativeTaskbar { get; set; } = true;
+    public bool AutoHideOnFullscreen { get; set; } = true;
+    public DockTheme Theme { get; set; } = new();
+    public List<DockShortcut> PinnedShortcuts { get; set; } = new();
+    public List<string> EnabledWidgets { get; set; } = new() { "Hardware", "Media", "Steam", "Discord" };
+    public Dictionary<string, WidgetSize> WidgetSizes { get; set; } = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Hardware"] = WidgetSize.Size1x1,
+        ["Media"] = WidgetSize.Size1x2,
+        ["Steam"] = WidgetSize.Size1x2,
+        ["Discord"] = WidgetSize.Size1x1,
+        ["Ai"] = WidgetSize.Size1x1
+    };
+    public bool AreDesktopWidgetsPinned { get; set; } = true;
+}
+
 public sealed class AppWindowInfo
 {
     public IntPtr Handle { get; init; }

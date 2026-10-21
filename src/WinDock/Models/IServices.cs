@@ -6,8 +6,8 @@ namespace WinDock.Models;
 
 public interface IAppBarService
 {
-    void RegisterBar(Window window, double heightDip, BarEdge edge = BarEdge.Top);
-    void UpdateBarPosition(Window window, double heightDip, BarEdge edge = BarEdge.Top);
+    void RegisterBar(Window window, double heightDip, BarEdge edge = BarEdge.Bottom);
+    void UpdateBarPosition(Window window, double heightDip, BarEdge edge = BarEdge.Bottom);
     void UnregisterBar(Window window);
     void PinToDesktop(Window widgetWindow);
 }
@@ -24,6 +24,22 @@ public interface IWindowTrackerService
 {
     IReadOnlyList<AppWindowInfo> GetOpenWindows(IntPtr excludeWindowHandle);
     void ToggleOrActivateWindow(IntPtr handle);
+    bool IsForegroundWindowFullscreen();
+}
+
+public interface IDockSettingsService
+{
+    DockSettings CurrentSettings { get; }
+    IReadOnlyList<DockTheme> AvailableThemes { get; }
+    event EventHandler<DockSettings>? SettingsChanged;
+    void LoadSettings();
+    void SaveSettings();
+    void UpdateSettings(DockSettings settings);
+    void ResetToDefaults();
+    void AddShortcut(DockShortcut shortcut);
+    void RemoveShortcut(string shortcutId);
+    void SetWidgetSize(string widgetName, WidgetSize size);
+    void SetTheme(DockTheme theme);
 }
 
 public interface IHardwareMonitorService

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Interop;
@@ -19,6 +20,13 @@ public sealed class WindowTrackerService : IWindowTrackerService
         public required string ProcessName { get; init; }
         public ImageSource? Icon { get; init; }
     }
+
+    [DllImport("user32.dll")]
+    private static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out Win32Interop.RECT lpRect);
 
     private static readonly HashSet<string> ExcludedClassNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -112,19 +120,54 @@ public sealed class WindowTrackerService : IWindowTrackerService
             return;
         }
 
+        IntPtr foregroundHwnd = Win32Interop.GetForegroundWindow();
+
         if (Win32Interop.IsIconic(handle))
         {
             Win32Interop.ShowWindow(handle, Win32Interop.SW_RESTORE);
+            BringWindowToTop(handle);
             Win32Interop.SetForegroundWindow(handle);
         }
-        else if (Win32Interop.GetForegroundWindow() == handle)
+        else if (foregroundHwnd == handle)
         {
             Win32Interop.ShowWindow(handle, Win32Interop.SW_MINIMIZE);
         }
         else
         {
+            BringWindowToTop(handle);
+            Win32Interop.ShowWindow(handle, Win32Interop.SW_SHOW);
             Win32Interop.SetForegroundWindow(handle);
         }
+    }
+
+    public bool IsForegroundWindowFullscreen()
+    {
+        IntPtr fg = Win32Interop.GetForegroundWindow();
+        if (fg == IntPtr.Zero || !Win32Interop.IsWindow(fg))
+        {
+            return false;
+        }
+
+        string className = GetWindowClassName(fg);
+        if (ExcludedClassNames.Contains(className))
+        {
+            return false;
+        }
+
+        if (IsWindowCloaked(fg) || Win32Interop.IsIconic(fg))
+        {
+            return false;
+        }
+
+        if (GetWindowRect(fg, out var rect))
+        {
+            int screenWidth = Win32Interop.GetSystemMetrics(Win32Interop.SM_CXSCREEN);
+            int screenHeight = Win32Interop.GetSystemMetrics(Win32Interop.SM_CYSCREEN);
+
+            return rect.left <= 0 && rect.top <= 0 && rect.right >= screenWidth && rect.bottom >= screenHeight;
+        }
+
+        return false;
     }
 
     private static bool IsWindowCloaked(IntPtr hWnd)

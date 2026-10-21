@@ -23,7 +23,7 @@ public sealed class AppBarService : IAppBarService
 
     private readonly Dictionary<IntPtr, AppBarRegistration> _registeredBars = new();
 
-    public void RegisterBar(Window window, double heightDip, BarEdge edge = BarEdge.Top)
+    public void RegisterBar(Window window, double heightDip, BarEdge edge = BarEdge.Bottom)
     {
         ArgumentNullException.ThrowIfNull(window);
 
@@ -64,13 +64,24 @@ public sealed class AppBarService : IAppBarService
             var source = HwndSource.FromHwnd(hwnd);
             if (source != null)
             {
-                HwndSourceHook hook = (IntPtr _, int msg, IntPtr wParam, IntPtr _, ref bool _) =>
+                HwndSourceHook hook = (IntPtr _, int msg, IntPtr wParam, IntPtr lParam, ref bool _) =>
                 {
-                    if ((uint)msg == registration.CallbackMessageId &&
-                        wParam.ToInt32() == Win32Interop.ABN_POSCHANGED &&
-                        !registration.IsUpdating)
+                    if ((uint)msg == registration.CallbackMessageId)
                     {
-                        UpdateBarPosition(registration.Window, registration.HeightDip, registration.Edge);
+                        switch (wParam.ToInt32())
+                        {
+                            case Win32Interop.ABN_POSCHANGED:
+                                if (!registration.IsUpdating)
+                                {
+                                    UpdateBarPosition(registration.Window, registration.HeightDip, registration.Edge);
+                                }
+                                break;
+
+                            case Win32Interop.ABN_FULLSCREENAPP:
+                                bool isFullscreen = lParam != IntPtr.Zero;
+                                HandleFullscreenApp(registration.Window, isFullscreen);
+                                break;
+                        }
                     }
                     return IntPtr.Zero;
                 };
@@ -90,7 +101,7 @@ public sealed class AppBarService : IAppBarService
         UpdateBarPosition(window, heightDip, edge);
     }
 
-    public void UpdateBarPosition(Window window, double heightDip, BarEdge edge = BarEdge.Top)
+    public void UpdateBarPosition(Window window, double heightDip, BarEdge edge = BarEdge.Bottom)
     {
         ArgumentNullException.ThrowIfNull(window);
 
@@ -140,26 +151,47 @@ public sealed class AppBarService : IAppBarService
 
             Win32Interop.SHAppBarMessage(Win32Interop.ABM_QUERYPOS, ref abd);
 
+            // CRITICAL: In AppBarService.UpdateBarPosition, when edge is BarEdge.Bottom,
+            // ensure the dock is placed at the exact bottom of the screen (bottom = screenHeightPx, top = screenHeightPx - barHeightPx)
+            // in place of the hidden Windows taskbar, NOT stacked above it!
             if (edge == BarEdge.Bottom)
             {
-                abd.rc.top = abd.rc.bottom - barHeightPx;
+                abd.rc.left = 0;
+                abd.rc.right = screenWidthPx;
+                abd.rc.bottom = screenHeightPx;
+                abd.rc.top = screenHeightPx - barHeightPx;
             }
             else
             {
-                abd.rc.bottom = abd.rc.top + barHeightPx;
+                abd.rc.left = 0;
+                abd.rc.right = screenWidthPx;
+                abd.rc.top = 0;
+                abd.rc.bottom = barHeightPx;
             }
 
             Win32Interop.SHAppBarMessage(Win32Interop.ABM_SETPOS, ref abd);
 
-            int widthPx = Math.Max(1, abd.rc.right - abd.rc.left);
-            int heightPx = Math.Max(1, abd.rc.bottom - abd.rc.top);
+            // Explicit target coordinates to guarantee the dock sits flush at the bottom
+            int targetLeftPx = 0;
+            int targetTopPx = edge == BarEdge.Bottom ? screenHeightPx - barHeightPx : 0;
+            int targetWidthPx = screenWidthPx;
+            int targetHeightPx = barHeightPx;
 
-            window.Left = abd.rc.left / scaleX;
-            window.Top = abd.rc.top / scaleY;
-            window.Width = widthPx / scaleX;
-            window.Height = heightPx / scaleY;
+            window.Left = targetLeftPx / scaleX;
+            window.Top = targetTopPx / scaleY;
+            window.Width = targetWidthPx / scaleX;
+            window.Height = targetHeightPx / scaleY;
 
-            Win32Interop.MoveWindow(hwnd, abd.rc.left, abd.rc.top, widthPx, heightPx, true);
+            Win32Interop.MoveWindow(hwnd, targetLeftPx, targetTopPx, targetWidthPx, targetHeightPx, true);
+
+            Win32Interop.SetWindowPos(
+                hwnd,
+                Win32Interop.HWND_TOPMOST,
+                targetLeftPx,
+                targetTopPx,
+                targetWidthPx,
+                targetHeightPx,
+                Win32Interop.SWP_NOACTIVATE | Win32Interop.SWP_SHOWWINDOW);
         }
         finally
         {
@@ -225,5 +257,47 @@ public sealed class AppBarService : IAppBarService
             0,
             0,
             Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+    }
+
+    private static void HandleFullscreenApp(Window window, bool isFullscreen)
+    {
+        try
+        {
+            var helper = new WindowInteropHelper(window);
+            IntPtr hwnd = helper.Handle;
+            if (hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            if (isFullscreen)
+            {
+                // Fullscreen app (game, media player) opened: lower dock behind it
+                Win32Interop.SetWindowPos(
+                    hwnd,
+                    Win32Interop.HWND_BOTTOM,
+                    0,
+                    0,
+                    0,
+                    0,
+                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+            }
+            else
+            {
+                // Fullscreen app closed: restore topmost dock position
+                Win32Interop.SetWindowPos(
+                    hwnd,
+                    Win32Interop.HWND_TOPMOST,
+                    0,
+                    0,
+                    0,
+                    0,
+                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+            }
+        }
+        catch
+        {
+            // Suppress errors during state change
+        }
     }
 }

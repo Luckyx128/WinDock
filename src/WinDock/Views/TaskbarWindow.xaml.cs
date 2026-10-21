@@ -106,15 +106,15 @@ public partial class TaskbarWindow : Window
         }
     }
 
-    private void WindowsScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    private void DockScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (WindowsScrollViewer is null)
+        if (DockScrollViewer is null)
         {
             return;
         }
 
-        double offset = WindowsScrollViewer.HorizontalOffset - (e.Delta * 0.5);
-        WindowsScrollViewer.ScrollToHorizontalOffset(Math.Max(0, offset));
+        double offset = DockScrollViewer.HorizontalOffset - (e.Delta * 0.5);
+        DockScrollViewer.ScrollToHorizontalOffset(Math.Max(0, offset));
         e.Handled = true;
     }
 

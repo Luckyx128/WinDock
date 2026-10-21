@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using WinDock.Interop;
 using WinDock.Models;
 
@@ -6,6 +7,25 @@ namespace WinDock.Services;
 
 public sealed class NativeTaskbarService : INativeTaskbarService
 {
+    private const uint SPI_SETWORKAREA = 0x002F;
+    private const uint SPI_GETWORKAREA = 0x0030;
+    private const uint SPIF_UPDATEINIFILE = 0x0001;
+    private const uint SPIF_SENDCHANGE = 0x0002;
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SystemParametersInfo(
+        uint uiAction,
+        uint uiParam,
+        ref Win32Interop.RECT pvParam,
+        uint fWinIni);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out Win32Interop.RECT lpRect);
+
+    private static Win32Interop.RECT? _savedWorkArea;
+
     public bool IsNativeTaskbarHidden { get; private set; }
 
     public void HideNativeTaskbar()
@@ -72,6 +92,75 @@ public sealed class NativeTaskbarService : INativeTaskbarService
             {
                 Win32Interop.ShowWindow(nextSecondary, showCommand);
             }
+        }
+
+        // When hiding/showing Shell_TrayWnd, call SystemParametersInfo(SPI_SETWORKAREA)
+        // so Windows releases the bottom taskbar space immediately.
+        UpdateDesktopWorkArea(showCommand, primaryHwnd);
+    }
+
+    private static void UpdateDesktopWorkArea(int showCommand, IntPtr primaryHwnd)
+    {
+        try
+        {
+            int screenWidth = Win32Interop.GetSystemMetrics(Win32Interop.SM_CXSCREEN);
+            int screenHeight = Win32Interop.GetSystemMetrics(Win32Interop.SM_CYSCREEN);
+
+            if (showCommand == Win32Interop.SW_HIDE)
+            {
+                // Capture work area before hiding if not yet saved
+                if (!_savedWorkArea.HasValue)
+                {
+                    var currentArea = new Win32Interop.RECT();
+                    if (SystemParametersInfo(SPI_GETWORKAREA, 0, ref currentArea, 0) && currentArea.Bottom > 0)
+                    {
+                        _savedWorkArea = currentArea;
+                    }
+                }
+
+                // Immediately release bottom taskbar area by expanding work area to full display
+                var fullArea = new Win32Interop.RECT
+                {
+                    left = 0,
+                    top = 0,
+                    right = screenWidth,
+                    bottom = screenHeight
+                };
+
+                SystemParametersInfo(SPI_SETWORKAREA, 0, ref fullArea, SPIF_SENDCHANGE);
+            }
+            else
+            {
+                // Restoring taskbar: restore previous work area or calculate using taskbar bounds
+                if (_savedWorkArea.HasValue)
+                {
+                    var restoredArea = _savedWorkArea.Value;
+                    SystemParametersInfo(SPI_SETWORKAREA, 0, ref restoredArea, SPIF_SENDCHANGE);
+                    _savedWorkArea = null;
+                }
+                else
+                {
+                    int taskbarTop = screenHeight - 48;
+                    if (primaryHwnd != IntPtr.Zero && GetWindowRect(primaryHwnd, out var tbRect) && tbRect.top > 0)
+                    {
+                        taskbarTop = tbRect.top;
+                    }
+
+                    var defaultArea = new Win32Interop.RECT
+                    {
+                        left = 0,
+                        top = 0,
+                        right = screenWidth,
+                        bottom = taskbarTop
+                    };
+
+                    SystemParametersInfo(SPI_SETWORKAREA, 0, ref defaultArea, SPIF_SENDCHANGE);
+                }
+            }
+        }
+        catch
+        {
+            // Fail-safe to avoid crashing on system metrics or permission restrictions
         }
     }
 }
