@@ -479,6 +479,7 @@ public sealed class AccentColorOption
     public required string Name { get; init; }
     public required Color Color { get; init; }
     public SolidColorBrush Brush => new(Color);
+    public string ColorHex => $"#{Color.R:X2}{Color.G:X2}{Color.B:X2}";
 }
 
 public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
@@ -501,6 +502,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly List<string> _customDockOrderKeys = new();
     private bool _isRefreshingTelemetry;
     private bool _isDisposed;
+    private bool _isLoadingCustomizations;
 
     private IntPtr _excludeWindowHandle;
     private BarEdge _currentEdge = BarEdge.Bottom;
@@ -695,6 +697,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         InitializeCleanPinnedShortcuts();
         InitializeDockWidgets();
 
+        // Restore and apply all saved user customizations (Theme, Accent, Edge, Widgets & Dock Order)
+        LoadSavedCustomizations();
+
         // Start Fast Timer: exactly 500ms for responsive fullscreen auto-hide and dock app updates
         _fastTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -859,6 +864,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                         AreWidgetsVisible = true;
                     }
                     SyncUnifiedDockStrip();
+                    SaveAllCustomizationsToDisk();
+                }
+                else if (e.PropertyName == nameof(DockWidgetItem.Size))
+                {
+                    SaveAllCustomizationsToDisk();
                 }
             };
             DockWidgets.Add(item);
@@ -975,6 +985,141 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         });
     }
 
+    private void LoadSavedCustomizations()
+    {
+        _isLoadingCustomizations = true;
+        try
+        {
+            var settings = _dockSettingsService.CurrentSettings;
+
+            // 1. Edge (Top / Bottom)
+            CurrentEdge = settings.Edge;
+
+            // 2. AreWidgetsVisible
+            AreWidgetsVisible = settings.AreDesktopWidgetsVisible;
+
+            // 3. Theme & Accent
+            if (!string.IsNullOrWhiteSpace(settings.SelectedThemeId))
+            {
+                var matchedTheme = AvailableThemes.FirstOrDefault(t =>
+                    string.Equals(t.Id, settings.SelectedThemeId, StringComparison.OrdinalIgnoreCase));
+                if (matchedTheme != null)
+                {
+                    _currentTheme = matchedTheme;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(settings.SelectedAccentHex))
+            {
+                var matchedAccent = AvailableAccents.FirstOrDefault(a =>
+                    string.Equals(a.ColorHex, settings.SelectedAccentHex, StringComparison.OrdinalIgnoreCase));
+                if (matchedAccent != null)
+                {
+                    _currentAccent = matchedAccent;
+                }
+                else
+                {
+                    try
+                    {
+                        var col = (Color)ColorConverter.ConvertFromString(settings.SelectedAccentHex);
+                        var customAccent = new AccentColorOption { Name = "Personalizado", Color = col };
+                        AvailableAccents.Insert(0, customAccent);
+                        _currentAccent = customAccent;
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            // Apply theme resources immediately
+            ApplyTheme(_currentTheme, _currentAccent?.Color);
+            OnPropertyChanged(nameof(CurrentTheme));
+            OnPropertyChanged(nameof(CurrentAccent));
+
+            // 4. Widget Visibility & Sizes
+            if (settings.EnabledWidgets is { Count: > 0 })
+            {
+                foreach (var widget in DockWidgets)
+                {
+                    bool isEnabled = settings.EnabledWidgets.Any(w =>
+                        string.Equals(w, widget.Id, StringComparison.OrdinalIgnoreCase) ||
+                        (string.Equals(w, "steam", StringComparison.OrdinalIgnoreCase) && string.Equals(widget.Id, "steam-jump-in", StringComparison.OrdinalIgnoreCase)));
+                    widget.IsVisible = isEnabled;
+
+                    if (settings.WidgetSizes.TryGetValue(widget.Id, out var savedSize))
+                    {
+                        widget.Size = (DockWidgetSize)(int)savedSize;
+                    }
+                }
+            }
+
+            // 5. Dock Order Keys
+            if (settings.DockOrderKeys is { Count: > 0 })
+            {
+                _customDockOrderKeys.Clear();
+                _customDockOrderKeys.AddRange(settings.DockOrderKeys);
+            }
+
+            // 6. Sync Unified Dock Strip
+            SyncUnifiedDockStrip();
+        }
+        catch
+        {
+            // Ignore error loading customizations
+        }
+        finally
+        {
+            _isLoadingCustomizations = false;
+        }
+    }
+
+    public void SaveAllCustomizationsToDisk()
+    {
+        if (_isLoadingCustomizations || _isDisposed)
+        {
+            return;
+        }
+
+        try
+        {
+            var settings = _dockSettingsService.CurrentSettings;
+            settings.Edge = CurrentEdge;
+            settings.AreDesktopWidgetsVisible = AreWidgetsVisible;
+            settings.SelectedThemeId = CurrentTheme?.Id ?? "dark-modern";
+            settings.SelectedAccentHex = CurrentAccent?.ColorHex ?? "#007ACC";
+
+            settings.EnabledWidgets.Clear();
+            foreach (var widget in DockWidgets)
+            {
+                if (widget.IsVisible)
+                {
+                    settings.EnabledWidgets.Add(widget.Id);
+                }
+                settings.WidgetSizes[widget.Id] = (WidgetSize)(int)widget.Size;
+            }
+
+            settings.DockOrderKeys.Clear();
+            if (_customDockOrderKeys.Count > 0)
+            {
+                settings.DockOrderKeys.AddRange(_customDockOrderKeys);
+            }
+            else
+            {
+                foreach (var item in DockStripItems)
+                {
+                    settings.DockOrderKeys.Add(item.DockOrderKey);
+                }
+            }
+
+            _dockSettingsService.SaveSettings();
+        }
+        catch
+        {
+            // Ignore save errors
+        }
+    }
+
     public void ToggleWidgetVisibility(DockWidgetItem? widget)
     {
         if (widget == null) return;
@@ -984,6 +1129,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             AreWidgetsVisible = true;
         }
         SyncUnifiedDockStrip();
+        SaveAllCustomizationsToDisk();
     }
 
     public IntPtr ExcludeWindowHandle
@@ -1012,6 +1158,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 OnPropertyChanged(nameof(EdgeLabel));
                 OnPropertyChanged(nameof(IsAtBottom));
                 EdgeChanged?.Invoke(this, EventArgs.Empty);
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -1033,6 +1180,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(WidgetsToggleText));
                 WidgetsVisibilityChanged?.Invoke(this, EventArgs.Empty);
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -1277,6 +1425,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 _currentTheme = value;
                 OnPropertyChanged();
                 ApplyTheme(value, _currentAccent?.Color);
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -1291,6 +1440,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 _currentAccent = value;
                 OnPropertyChanged();
                 ApplyTheme(_currentTheme, value.Color);
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -1616,6 +1766,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         SyncPinnedOrderFromDockApps();
         SyncDockWidgetsOrderFromStrip();
+        SaveAllCustomizationsToDisk();
     }
 
     public void MoveDockItemLeft(IDockOrderableItem item)
@@ -1633,6 +1784,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             {
                 DockWidgets.Move(wIdx, wIdx - 1);
                 SyncUnifiedDockStrip();
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -1652,6 +1804,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             {
                 DockWidgets.Move(wIdx, wIdx + 1);
                 SyncUnifiedDockStrip();
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -2093,6 +2246,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         SyncPinnedOrderFromDockApps();
         SyncPinnedShortcutsFromSettings();
         RefreshFastState();
+        SaveAllCustomizationsToDisk();
     }
 
     /// <summary>
@@ -2138,6 +2292,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         SyncPinnedOrderFromDockApps();
         SyncPinnedShortcutsFromSettings();
         RefreshFastState();
+        SaveAllCustomizationsToDisk();
     }
 
     public void TogglePinApp(DockAppItem item)
@@ -2185,6 +2340,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         SyncPinnedShortcutsFromSettings();
         RefreshFastState();
+        SaveAllCustomizationsToDisk();
     }
 
     private void TogglePinOpenAppItem(OpenAppPinItem pinItem)
@@ -2241,6 +2397,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _dockSettingsService.AddShortcut(shortcut);
         SyncPinnedShortcutsFromSettings();
         RefreshFastState();
+        SaveAllCustomizationsToDisk();
     }
 
     private void ExecuteAddCustomShortcut(object? parameter)
@@ -2258,6 +2415,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             _dockSettingsService.RemoveShortcut(item.Id);
             PinnedShortcuts.Remove(item);
             RefreshFastState();
+            SaveAllCustomizationsToDisk();
         }
     }
 
@@ -2282,6 +2440,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     }
                 }
                 RefreshFastState();
+                SaveAllCustomizationsToDisk();
             }
         }
     }
@@ -2307,6 +2466,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     }
                 }
                 RefreshFastState();
+                SaveAllCustomizationsToDisk();
             }
         }
     }

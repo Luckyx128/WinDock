@@ -47,15 +47,31 @@ public sealed class DockSettings
     public bool AutoHideNativeTaskbar { get; set; } = true;
     public bool AutoHideOnFullscreen { get; set; } = true;
     public DockTheme Theme { get; set; } = new();
+    public string SelectedThemeId { get; set; } = "dark-modern";
+    public string SelectedAccentHex { get; set; } = "#007ACC";
+    public bool AreDesktopWidgetsVisible { get; set; } = true;
+    public List<string> DockOrderKeys { get; set; } = new();
     public List<DockShortcut> PinnedShortcuts { get; set; } = new();
-    public List<string> EnabledWidgets { get; set; } = new() { "Hardware", "Media", "Steam", "Discord" };
+    public List<string> EnabledWidgets { get; set; } = new()
+    {
+        "hardware",
+        "media",
+        "steam-jump-in",
+        "discord"
+    };
     public Dictionary<string, WidgetSize> WidgetSizes { get; set; } = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["Hardware"] = WidgetSize.Size1x1,
-        ["Media"] = WidgetSize.Size1x2,
-        ["Steam"] = WidgetSize.Size1x2,
-        ["Discord"] = WidgetSize.Size1x1,
-        ["Ai"] = WidgetSize.Size1x1
+        ["hardware"] = WidgetSize.Size1x2,
+        ["media"] = WidgetSize.Size1x2,
+        ["steam-jump-in"] = WidgetSize.Size1x2,
+        ["steam-recent"] = WidgetSize.Size1x3,
+        ["steam-downloads"] = WidgetSize.Size1x2,
+        ["steam-now-playing"] = WidgetSize.Size1x2,
+        ["steam-hub"] = WidgetSize.Size1x1,
+        ["steam-storage"] = WidgetSize.Size1x2,
+        ["discord"] = WidgetSize.Size1x1,
+        ["ai"] = WidgetSize.Size1x1,
+        ["clock"] = WidgetSize.Size1x2
     };
     public bool AreDesktopWidgetsPinned { get; set; } = true;
 }

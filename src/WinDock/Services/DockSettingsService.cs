@@ -279,15 +279,25 @@ public sealed class DockSettingsService : IDockSettingsService
             AutoHideNativeTaskbar = true,
             AutoHideOnFullscreen = true,
             Theme = PredefinedThemes[0],
+            SelectedThemeId = "dark-modern",
+            SelectedAccentHex = "#007ACC",
+            AreDesktopWidgetsVisible = true,
+            DockOrderKeys = new List<string>(),
             AreDesktopWidgetsPinned = true,
-            EnabledWidgets = new List<string> { "Hardware", "Media", "Steam", "Discord" },
+            EnabledWidgets = new List<string> { "hardware", "media", "steam-jump-in", "discord" },
             WidgetSizes = new Dictionary<string, WidgetSize>(StringComparer.OrdinalIgnoreCase)
             {
-                ["Hardware"] = WidgetSize.Size1x1,
-                ["Media"] = WidgetSize.Size1x2,
-                ["Steam"] = WidgetSize.Size1x2,
-                ["Discord"] = WidgetSize.Size1x1,
-                ["Ai"] = WidgetSize.Size1x1
+                ["hardware"] = WidgetSize.Size1x2,
+                ["media"] = WidgetSize.Size1x2,
+                ["steam-jump-in"] = WidgetSize.Size1x2,
+                ["steam-recent"] = WidgetSize.Size1x3,
+                ["steam-downloads"] = WidgetSize.Size1x2,
+                ["steam-now-playing"] = WidgetSize.Size1x2,
+                ["steam-hub"] = WidgetSize.Size1x1,
+                ["steam-storage"] = WidgetSize.Size1x2,
+                ["discord"] = WidgetSize.Size1x1,
+                ["ai"] = WidgetSize.Size1x1,
+                ["clock"] = WidgetSize.Size1x2
             },
             PinnedShortcuts = new List<DockShortcut>
             {
@@ -305,17 +315,33 @@ public sealed class DockSettingsService : IDockSettingsService
     private static void EnsureSettingsIntegrity(DockSettings settings)
     {
         settings.PinnedShortcuts ??= new List<DockShortcut>();
-        settings.EnabledWidgets ??= new List<string> { "Hardware", "Media", "Steam", "Discord" };
+        settings.EnabledWidgets ??= new List<string> { "hardware", "media", "steam-jump-in", "discord" };
         settings.WidgetSizes ??= new Dictionary<string, WidgetSize>(StringComparer.OrdinalIgnoreCase);
         settings.Theme ??= PredefinedThemes[0];
+        settings.DockOrderKeys ??= new List<string>();
+
+        if (string.IsNullOrWhiteSpace(settings.SelectedThemeId))
+        {
+            settings.SelectedThemeId = settings.Theme.Id ?? "dark-modern";
+        }
+        if (string.IsNullOrWhiteSpace(settings.SelectedAccentHex))
+        {
+            settings.SelectedAccentHex = settings.Theme.AccentColorHex ?? "#007ACC";
+        }
 
         if (settings.WidgetSizes.Count == 0)
         {
-            settings.WidgetSizes["Hardware"] = WidgetSize.Size1x1;
-            settings.WidgetSizes["Media"] = WidgetSize.Size1x2;
-            settings.WidgetSizes["Steam"] = WidgetSize.Size1x2;
-            settings.WidgetSizes["Discord"] = WidgetSize.Size1x1;
-            settings.WidgetSizes["Ai"] = WidgetSize.Size1x1;
+            settings.WidgetSizes["hardware"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["media"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["steam-jump-in"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["steam-recent"] = WidgetSize.Size1x3;
+            settings.WidgetSizes["steam-downloads"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["steam-now-playing"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["steam-hub"] = WidgetSize.Size1x1;
+            settings.WidgetSizes["steam-storage"] = WidgetSize.Size1x2;
+            settings.WidgetSizes["discord"] = WidgetSize.Size1x1;
+            settings.WidgetSizes["ai"] = WidgetSize.Size1x1;
+            settings.WidgetSizes["clock"] = WidgetSize.Size1x2;
         }
     }
 }
