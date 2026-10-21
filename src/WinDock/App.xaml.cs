@@ -33,6 +33,7 @@ public partial class App : System.Windows.Application
 
         // Ensure native taskbar is always restored if process exits unexpectedly
         AppDomain.CurrentDomain.ProcessExit += (_, _) => SafeRestoreTaskbar();
+
         DispatcherUnhandledException += (_, args) =>
         {
             SafeRestoreTaskbar();

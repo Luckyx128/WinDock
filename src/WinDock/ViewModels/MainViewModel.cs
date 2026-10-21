@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
@@ -77,6 +78,11 @@ public sealed class DockWidgetItem : IDockOrderableItem, INotifyPropertyChanged
     public required string Title { get; init; }
     public required string IconGlyph { get; init; }
     public required string Description { get; init; }
+
+    public string AppGroup { get; init; } = "Geral";
+    public string AppIconGlyph { get; init; } = "🧩";
+    public string AppGroupDescription { get; init; } = string.Empty;
+    public int AppGroupOrder { get; init; } = 99;
 
     public string DockOrderKey => $"widget:{Id}";
     public bool IsWidget => true;
@@ -557,6 +563,47 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public ObservableCollection<PinnedShortcutItem> PinnedShortcuts { get; } = new();
     public ObservableCollection<DockWidgetItem> DockWidgets { get; } = new();
+
+    /// <summary>
+    /// Requirement (Sprint 11-A): Grouped dock widgets by App/Category with real-time filtering.
+    /// </summary>
+    public ICollectionView GroupedDockWidgets { get; }
+    public ICollectionView AllGroupedDockWidgets { get; }
+
+    private string _selectedWidgetGroupFilter = "Todos";
+    public string SelectedWidgetGroupFilter
+    {
+        get => _selectedWidgetGroupFilter;
+        set
+        {
+            if (_selectedWidgetGroupFilter != value)
+            {
+                _selectedWidgetGroupFilter = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsFilterAll));
+                OnPropertyChanged(nameof(IsFilterSteam));
+                OnPropertyChanged(nameof(IsFilterDiscord));
+                OnPropertyChanged(nameof(IsFilterMedia));
+                OnPropertyChanged(nameof(IsFilterSystem));
+                GroupedDockWidgets.Refresh();
+            }
+        }
+    }
+
+    public bool IsFilterAll => string.Equals(_selectedWidgetGroupFilter, "Todos", StringComparison.OrdinalIgnoreCase);
+    public bool IsFilterSteam => string.Equals(_selectedWidgetGroupFilter, "Steam", StringComparison.OrdinalIgnoreCase);
+    public bool IsFilterDiscord => string.Equals(_selectedWidgetGroupFilter, "Discord", StringComparison.OrdinalIgnoreCase);
+    public bool IsFilterMedia => string.Equals(_selectedWidgetGroupFilter, "Mídia & YouTube", StringComparison.OrdinalIgnoreCase);
+    public bool IsFilterSystem => string.Equals(_selectedWidgetGroupFilter, "Sistema & Hardware", StringComparison.OrdinalIgnoreCase);
+
+    public int TotalWidgetsCount => DockWidgets.Count;
+    public int SteamWidgetsCount => DockWidgets.Count(w => w.AppGroup == "Steam");
+    public int DiscordWidgetsCount => DockWidgets.Count(w => w.AppGroup == "Discord");
+    public int MediaWidgetsCount => DockWidgets.Count(w => w.AppGroup == "Mídia & YouTube");
+    public int SystemWidgetsCount => DockWidgets.Count(w => w.AppGroup == "Sistema & Hardware");
+    public int ActiveWidgetsCount => DockWidgets.Count(w => w.IsVisible);
+
+    public ICommand SetWidgetFilterCommand { get; }
     public ObservableCollection<ThemePreset> AvailableThemes { get; } = new();
     public ObservableCollection<AccentColorOption> AvailableAccents { get; } = new();
     public ObservableCollection<SteamGameInfo> InstalledGames { get; } = new();
@@ -709,6 +756,30 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         // Clean Dock initialization: no fake emoji shortcuts & all dock widgets IsVisible = false by default!
         InitializeCleanPinnedShortcuts();
         InitializeDockWidgets();
+
+        // Sprint 11-A: Grouped Dock Widgets by App with sorting and category filter
+        GroupedDockWidgets = new ListCollectionView(DockWidgets);
+        GroupedDockWidgets.GroupDescriptions.Add(new PropertyGroupDescription(nameof(DockWidgetItem.AppGroup)));
+        GroupedDockWidgets.SortDescriptions.Add(new SortDescription(nameof(DockWidgetItem.AppGroupOrder), ListSortDirection.Ascending));
+        GroupedDockWidgets.Filter = obj =>
+        {
+            if (obj is not DockWidgetItem item) return false;
+            if (string.IsNullOrEmpty(_selectedWidgetGroupFilter) || _selectedWidgetGroupFilter == "Todos")
+                return true;
+            return string.Equals(item.AppGroup, _selectedWidgetGroupFilter, StringComparison.OrdinalIgnoreCase);
+        };
+
+        AllGroupedDockWidgets = new ListCollectionView(DockWidgets);
+        AllGroupedDockWidgets.GroupDescriptions.Add(new PropertyGroupDescription(nameof(DockWidgetItem.AppGroup)));
+        AllGroupedDockWidgets.SortDescriptions.Add(new SortDescription(nameof(DockWidgetItem.AppGroupOrder), ListSortDirection.Ascending));
+
+        SetWidgetFilterCommand = new RelayCommand(param =>
+        {
+            if (param is string filter)
+            {
+                SelectedWidgetGroupFilter = filter;
+            }
+        });
 
         // Restore and apply all saved user customizations (Theme, Accent, Edge, Widgets & Dock Order)
         LoadSavedCustomizations();
@@ -876,6 +947,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     {
                         AreWidgetsVisible = true;
                     }
+                    OnPropertyChanged(nameof(ActiveWidgetsCount));
                     SyncUnifiedDockStrip();
                     SaveAllCustomizationsToDisk();
                 }
@@ -887,32 +959,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             DockWidgets.Add(item);
         }
 
-        AddWidget(new DockWidgetItem
-        {
-            Id = "hardware",
-            Title = "Monitor de Hardware",
-            IconGlyph = "⚡",
-            Description = "Gauges de CPU, GPU e memória RAM em tempo real",
-            IsVisible = false,
-            Size = DockWidgetSize.Size1x2
-        });
-
-        AddWidget(new DockWidgetItem
-        {
-            Id = "media",
-            Title = "Mídia & YouTube",
-            IconGlyph = "▶",
-            Description = "Player com reprodução ativa, YouTube e controles de faixa",
-            IsVisible = false,
-            Size = DockWidgetSize.Size1x2
-        });
-
+        // 1. STEAM WIDGETS (6 modular widgets)
         AddWidget(new DockWidgetItem
         {
             Id = "steam-jump-in",
             Title = "Steam: Continuar Jogando",
             IconGlyph = "▶",
             Description = "1-clique para continuar o último jogo com banner e ícone oficial",
+            AppGroup = "Steam",
+            AppIconGlyph = "🎮",
+            AppGroupDescription = "Módulos integrados ao cliente oficial da Steam",
+            AppGroupOrder = 1,
             IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
@@ -923,6 +980,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Steam: Jogos Recentes",
             IconGlyph = "🕹",
             Description = "Estante dos 1, 2 ou 3 últimos jogos com ícones originais",
+            AppGroup = "Steam",
+            AppIconGlyph = "🎮",
+            AppGroupDescription = "Módulos integrados ao cliente oficial da Steam",
+            AppGroupOrder = 1,
             IsVisible = false,
             Size = DockWidgetSize.Size1x3
         });
@@ -933,6 +994,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Steam: Downloads & Updates",
             IconGlyph = "⬇",
             Description = "Progresso de download/atualização com barra e porcentagem",
+            AppGroup = "Steam",
+            AppIconGlyph = "🎮",
+            AppGroupDescription = "Módulos integrados ao cliente oficial da Steam",
+            AppGroupOrder = 1,
             IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
@@ -943,6 +1008,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Steam: Sessão & Perfil",
             IconGlyph = "👤",
             Description = "Nome de perfil, avatar/ícone Steam e jogo em execução",
+            AppGroup = "Steam",
+            AppIconGlyph = "🎮",
+            AppGroupDescription = "Módulos integrados ao cliente oficial da Steam",
+            AppGroupOrder = 1,
             IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
@@ -953,6 +1022,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Steam: Atalhos Rápidos",
             IconGlyph = "🎮",
             Description = "Acesso rápido com ícone oficial (Biblioteca, Amigos, Prints)",
+            AppGroup = "Steam",
+            AppIconGlyph = "🎮",
+            AppGroupDescription = "Módulos integrados ao cliente oficial da Steam",
+            AppGroupOrder = 1,
             IsVisible = false,
             Size = DockWidgetSize.Size1x1
         });
@@ -963,18 +1036,57 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Steam: Espaço da Biblioteca",
             IconGlyph = "💾",
             Description = "Espaço ocupado no SSD e destaque do maior jogo instalado",
+            AppGroup = "Steam",
+            AppIconGlyph = "🎮",
+            AppGroupDescription = "Módulos integrados ao cliente oficial da Steam",
+            AppGroupOrder = 1,
             IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
 
+        // 2. DISCORD WIDGET
         AddWidget(new DockWidgetItem
         {
             Id = "discord",
             Title = "Discord Presence",
             IconGlyph = "💬",
             Description = "Presença do Discord e atividade em execução",
+            AppGroup = "Discord",
+            AppIconGlyph = "💬",
+            AppGroupDescription = "Status de voz e presença rica do Discord",
+            AppGroupOrder = 2,
             IsVisible = false,
             Size = DockWidgetSize.Size1x1
+        });
+
+        // 3. MÍDIA & YOUTUBE WIDGET
+        AddWidget(new DockWidgetItem
+        {
+            Id = "media",
+            Title = "Mídia & YouTube",
+            IconGlyph = "▶",
+            Description = "Player com reprodução ativa, YouTube e controles de faixa",
+            AppGroup = "Mídia & YouTube",
+            AppIconGlyph = "▶",
+            AppGroupDescription = "Controle multimídia do Windows e reprodução ativa",
+            AppGroupOrder = 3,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
+        });
+
+        // 4. SISTEMA & HARDWARE WIDGETS
+        AddWidget(new DockWidgetItem
+        {
+            Id = "hardware",
+            Title = "Monitor de Hardware",
+            IconGlyph = "⚡",
+            Description = "Gauges de CPU, GPU e memória RAM em tempo real",
+            AppGroup = "Sistema & Hardware",
+            AppIconGlyph = "⚡",
+            AppGroupDescription = "Sensores de CPU/RAM/GPU, contador de IA e relógio",
+            AppGroupOrder = 4,
+            IsVisible = false,
+            Size = DockWidgetSize.Size1x2
         });
 
         AddWidget(new DockWidgetItem
@@ -983,6 +1095,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Resumo IA",
             IconGlyph = "✨",
             Description = "Contador de requisições de IA e modelos ativos",
+            AppGroup = "Sistema & Hardware",
+            AppIconGlyph = "⚡",
+            AppGroupDescription = "Sensores de CPU/RAM/GPU, contador de IA e relógio",
+            AppGroupOrder = 4,
             IsVisible = false,
             Size = DockWidgetSize.Size1x1
         });
@@ -993,6 +1109,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Relógio & Calendário",
             IconGlyph = "🕒",
             Description = "Horário preciso, data e dia da semana",
+            AppGroup = "Sistema & Hardware",
+            AppIconGlyph = "⚡",
+            AppGroupDescription = "Sensores de CPU/RAM/GPU, contador de IA e relógio",
+            AppGroupOrder = 4,
             IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
@@ -1073,6 +1193,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     }
                 }
             }
+            OnPropertyChanged(nameof(ActiveWidgetsCount));
 
             // 5. Dock Order Keys
             if (settings.DockOrderKeys is { Count: > 0 })
@@ -1408,6 +1529,45 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         : (SteamStatus.IsRunning ? "Online (Pronto)" : (SteamStatus.IsInstalled ? "Pronto para jogar" : "Steam offline"));
     public string SteamPersonaName => !string.IsNullOrWhiteSpace(SteamStatus.PersonaName) ? SteamStatus.PersonaName : "Luckyx";
     public ImageSource? SteamClientIcon => SteamStatus.SteamClientIcon;
+
+    private ImageSource? _discordClientIcon;
+    public ImageSource? DiscordClientIcon => _discordClientIcon ??= ResolveDiscordClientIcon();
+    public bool HasDiscordClientIcon => DiscordClientIcon != null;
+
+    private static ImageSource? ResolveDiscordClientIcon()
+    {
+        try
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string discordBaseDir = Path.Combine(localAppData, "Discord");
+            if (Directory.Exists(discordBaseDir))
+            {
+                var appDirs = Directory.GetDirectories(discordBaseDir, "app-*");
+                if (appDirs.Length > 0)
+                {
+                    var latestAppDir = appDirs.OrderByDescending(d => d, StringComparer.OrdinalIgnoreCase).First();
+                    string discordExe = Path.Combine(latestAppDir, "Discord.exe");
+                    if (File.Exists(discordExe))
+                    {
+                        var icon = ExtractIconForPath(discordExe);
+                        if (icon != null) return icon;
+                    }
+                }
+
+                string directExe = Path.Combine(discordBaseDir, "Discord.exe");
+                if (File.Exists(directExe))
+                {
+                    var icon = ExtractIconForPath(directExe);
+                    if (icon != null) return icon;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
 
     public string SteamLargestGameText => SteamStatus.LargestGame != null
         ? $"{SteamStatus.LargestGame.Name} ({SteamStatus.LargestGame.SizeFormatted})"

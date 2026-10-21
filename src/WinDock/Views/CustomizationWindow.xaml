@@ -232,6 +232,95 @@
             </Setter>
         </Style>
 
+        <!-- ================= APP GROUP HEADER TEMPLATE (SPRINT 11-A) ================= -->
+        <DataTemplate x:Key="DockWidgetGroupHeaderTemplate">
+            <Border Background="{DynamicResource PillBackgroundBrush}"
+                    BorderBrush="{DynamicResource BarBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,7"
+                    Margin="0,12,0,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- App Category Icon Badge (Real Icons & Vectors - No Emojis) -->
+                        <Border Width="26" Height="26" CornerRadius="6" Background="#141C2B" BorderBrush="{DynamicResource BarBorderBrush}" BorderThickness="1" Margin="0,0,9,0" VerticalAlignment="Center">
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- 1. STEAM ICON (Real steam.exe client icon) -->
+                                <Border x:Name="SteamGroupIcon" Width="16" Height="16" CornerRadius="4" Visibility="Collapsed">
+                                    <Border.Background>
+                                        <ImageBrush ImageSource="{Binding DataContext.SteamClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                    </Border.Background>
+                                </Border>
+
+                                <!-- 2. DISCORD ICON (Real Discord.exe client icon + Clyde vector fallback) -->
+                                <Grid x:Name="DiscordGroupIcon" Visibility="Collapsed">
+                                    <Border x:Name="DiscordRealIcon" Width="16" Height="16" CornerRadius="4">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="{Binding DataContext.DiscordClientIcon, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                        </Border.Background>
+                                    </Border>
+                                    <Path x:Name="DiscordFallbackPath"
+                                          Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
+                                          Width="14" Height="11" Stretch="Uniform" Fill="{DynamicResource AccentCyanBrush}"
+                                          Visibility="Collapsed" />
+                                </Grid>
+
+                                <!-- 3. MÍDIA & YOUTUBE (Minimalist Vector Path) -->
+                                <Grid x:Name="MediaGroupIcon" Visibility="Collapsed">
+                                    <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
+                                          Width="14" Height="10" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
+                                </Grid>
+
+                                <!-- 4. SISTEMA & HARDWARE (Lightning bolt) -->
+                                <Grid x:Name="SystemGroupIcon" Visibility="Collapsed">
+                                    <Path Data="M7 2v11h3v9l7-12h-4l3-8z"
+                                          Width="11" Height="13" Stretch="Uniform" Fill="{DynamicResource AccentCyanBrush}" />
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- Group Name & App Subtitle -->
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding Items[0].AppGroupDescription}" FontSize="9.5" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Widget Count Badge -->
+                    <Border Grid.Column="1" Background="#182334" BorderBrush="{DynamicResource BarBorderBrush}" BorderThickness="1"
+                            CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ItemCount, StringFormat='{}{0} widgets'}" FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Name}" Value="Steam">
+                    <Setter TargetName="SteamGroupIcon" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Name}" Value="Discord">
+                    <Setter TargetName="DiscordGroupIcon" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding DataContext.HasDiscordClientIcon, RelativeSource={RelativeSource AncestorType=Window}}" Value="False">
+                    <Setter TargetName="DiscordRealIcon" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="DiscordFallbackPath" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Name}" Value="Mídia &amp; YouTube">
+                    <Setter TargetName="MediaGroupIcon" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Name}" Value="Sistema &amp; Hardware">
+                    <Setter TargetName="SystemGroupIcon" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
         <!-- ================= MINIMALIST 52PX WIDGET ROW TEMPLATE ================= -->
         <DataTemplate x:Key="CompactWidgetRowTemplate">
             <Border Background="{DynamicResource PillBackgroundBrush}"
@@ -1466,12 +1555,176 @@
                                             <TextBlock Text="Widgets Modulares da Dock" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
                                             <TextBlock Text="Alterne tamanhos (1x1, 1x2, 1x3), ordene com ◄ / ► e visualize a prévia real e viva no mini-slot." FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
                                         </StackPanel>
-                                        <TextBlock Grid.Column="1" Text="6 Widgets Ativos" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" VerticalAlignment="Center" />
+                                        <Border Grid.Column="1" Background="#182334" BorderBrush="{DynamicResource BarBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ActiveWidgetsCount, StringFormat='{}{0} Ativos'}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                        </Border>
                                     </Grid>
                                 </Border>
 
-                                <ItemsControl ItemsSource="{Binding DockWidgets}"
-                                              ItemTemplate="{StaticResource CompactWidgetRowTemplate}" />
+                                <!-- APP CATEGORY FILTER PILLS (SPRINT 11-A.2: REAL CLIENT ICONS & VECTORS - NO EMOJIS) -->
+                                <Border Background="{DynamicResource WindowCardBrush}" BorderBrush="{DynamicResource WindowBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="6,5" Margin="0,0,0,10">
+                                    <WrapPanel Orientation="Horizontal">
+                                        <!-- TODOS -->
+                                        <Button Command="{Binding SetWidgetFilterCommand}" CommandParameter="Todos" Margin="0,0,5,0" Padding="9,4">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFilterAll}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="M3 3h5v5H3zm7 0h5v5h-5zm-7 7h5v5H3zm7 0h5v5h-5z"
+                                                      Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="Todos" FontSize="11" VerticalAlignment="Center" />
+                                                <Border Background="#22FFFFFF" CornerRadius="8" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding TotalWidgetsCount}" FontSize="9" FontWeight="Bold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- STEAM (Real steam.exe Client Icon) -->
+                                        <Button Command="{Binding SetWidgetFilterCommand}" CommandParameter="Steam" Margin="0,0,5,0" Padding="9,4">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFilterSteam}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Border Width="16" Height="16" CornerRadius="4" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                    <Border.Background>
+                                                        <ImageBrush ImageSource="{Binding SteamClientIcon}"
+                                                                    RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                                    </Border.Background>
+                                                </Border>
+                                                <TextBlock Text="Steam" FontSize="11" VerticalAlignment="Center" />
+                                                <Border Background="#22FFFFFF" CornerRadius="8" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding SteamWidgetsCount}" FontSize="9" FontWeight="Bold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- DISCORD (Real Discord.exe Client Icon + Clyde Fallback) -->
+                                        <Button Command="{Binding SetWidgetFilterCommand}" CommandParameter="Discord" Margin="0,0,5,0" Padding="9,4">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFilterDiscord}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Grid Margin="0,0,6,0" VerticalAlignment="Center">
+                                                    <Border Width="16" Height="16" CornerRadius="4">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasDiscordClientIcon}" Value="False">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <Border.Background>
+                                                            <ImageBrush ImageSource="{Binding DiscordClientIcon}"
+                                                                        RenderOptions.BitmapScalingMode="HighQuality" Stretch="UniformToFill" />
+                                                        </Border.Background>
+                                                    </Border>
+                                                    <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
+                                                          Width="14" Height="11" Stretch="Uniform" Fill="{DynamicResource AccentCyanBrush}">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasDiscordClientIcon}" Value="False">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+                                                </Grid>
+                                                <TextBlock Text="Discord" FontSize="11" VerticalAlignment="Center" />
+                                                <Border Background="#22FFFFFF" CornerRadius="8" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding DiscordWidgetsCount}" FontSize="9" FontWeight="Bold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- MÍDIA & YOUTUBE (Minimalist Vector Path) -->
+                                        <Button Command="{Binding SetWidgetFilterCommand}" CommandParameter="Mídia &amp; YouTube" Margin="0,0,5,0" Padding="9,4">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFilterMedia}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
+                                                      Width="13" Height="9" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="Mídia &amp; YouTube" FontSize="11" VerticalAlignment="Center" />
+                                                <Border Background="#22FFFFFF" CornerRadius="8" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding MediaWidgetsCount}" FontSize="9" FontWeight="Bold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- SISTEMA & HARDWARE (Lightning Bolt Vector) -->
+                                        <Button Command="{Binding SetWidgetFilterCommand}" CommandParameter="Sistema &amp; Hardware" Padding="9,4">
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFilterSystem}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Path Data="M7 2v11h3v9l7-12h-4l3-8z"
+                                                      Width="10" Height="12" Stretch="Uniform" Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="Sistema &amp; Hardware" FontSize="11" VerticalAlignment="Center" />
+                                                <Border Background="#22FFFFFF" CornerRadius="8" Padding="5,1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding SystemWidgetsCount}" FontSize="9" FontWeight="Bold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Button>
+                                    </WrapPanel>
+                                </Border>
+
+                                <ItemsControl ItemsSource="{Binding GroupedDockWidgets}"
+                                              ItemTemplate="{StaticResource CompactWidgetRowTemplate}">
+                                    <ItemsControl.GroupStyle>
+                                        <GroupStyle HeaderTemplate="{StaticResource DockWidgetGroupHeaderTemplate}" />
+                                    </ItemsControl.GroupStyle>
+                                </ItemsControl>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
@@ -1826,10 +2079,14 @@
                                 <!-- GROUP 1: WIDGETS DA DOCK -->
                                 <StackPanel x:Name="WidgetsGroup">
                                     <Border Style="{StaticResource SettingsCardStyle}" Padding="12,10" Margin="0,0,0,8">
-                                        <TextBlock Text="🧩 Widgets Modulares da Dock (Prévia Minimalista)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <TextBlock Text="Widgets Modulares da Dock (Agrupados por App)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
                                     </Border>
-                                    <ItemsControl ItemsSource="{Binding DockWidgets}"
-                                                  ItemTemplate="{StaticResource CompactWidgetRowTemplate}" />
+                                    <ItemsControl ItemsSource="{Binding AllGroupedDockWidgets}"
+                                                  ItemTemplate="{StaticResource CompactWidgetRowTemplate}">
+                                        <ItemsControl.GroupStyle>
+                                            <GroupStyle HeaderTemplate="{StaticResource DockWidgetGroupHeaderTemplate}" />
+                                        </ItemsControl.GroupStyle>
+                                    </ItemsControl>
                                 </StackPanel>
 
                                 <!-- GROUP 2: FAIXA UNIFICADA & APPS -->
