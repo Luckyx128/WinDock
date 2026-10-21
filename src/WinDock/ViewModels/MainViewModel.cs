@@ -50,6 +50,16 @@ public sealed class RelayCommand : ICommand
     }
 }
 
+public interface IDockOrderableItem : INotifyPropertyChanged
+{
+    string DockOrderKey { get; }
+    string Title { get; }
+    bool IsWidget { get; }
+    bool IsDragging { get; set; }
+    ICommand MoveLeftCommand { get; }
+    ICommand MoveRightCommand { get; }
+}
+
 public enum DockWidgetSize
 {
     Size1x1 = 1,
@@ -57,15 +67,35 @@ public enum DockWidgetSize
     Size1x3 = 3
 }
 
-public sealed class DockWidgetItem : INotifyPropertyChanged
+public sealed class DockWidgetItem : IDockOrderableItem, INotifyPropertyChanged
 {
     private bool _isVisible;
     private DockWidgetSize _size;
+    private bool _isDragging;
 
     public required string Id { get; init; }
     public required string Title { get; init; }
     public required string IconGlyph { get; init; }
     public required string Description { get; init; }
+
+    public string DockOrderKey => $"widget:{Id}";
+    public bool IsWidget => true;
+
+    public bool IsDragging
+    {
+        get => _isDragging;
+        set
+        {
+            if (_isDragging != value)
+            {
+                _isDragging = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public ICommand MoveLeftCommand { get; set; } = new RelayCommand(() => { });
+    public ICommand MoveRightCommand { get; set; } = new RelayCommand(() => { });
 
     public bool IsVisible
     {
@@ -192,7 +222,7 @@ public sealed class PinnedShortcutItem : INotifyPropertyChanged
 /// <summary>
 /// Unified 1x1 Dock App Item combining user-pinned apps and open windows into one item.
 /// </summary>
-public sealed class DockAppItem : INotifyPropertyChanged
+public sealed class DockAppItem : IDockOrderableItem, INotifyPropertyChanged
 {
     private string _title = string.Empty;
     private string? _executablePath;
@@ -205,6 +235,9 @@ public sealed class DockAppItem : INotifyPropertyChanged
     private string? _shortcutId;
     private ImageSource? _icon;
     private bool _isDragging;
+
+    public string DockOrderKey => MainViewModel.GetDockAppKey(this);
+    public bool IsWidget => false;
 
     public string Title
     {
@@ -496,6 +529,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public event Action? OpenCustomizationRequested;
 
     /// <summary>
+    /// Unified interleaved dock strip containing apps and visible modular widgets in customizable order.
+    /// </summary>
+    public ObservableCollection<IDockOrderableItem> DockStripItems { get; } = new();
+
+    /// <summary>
     /// Unified Dock collection containing both open apps and user-pinned apps as 1x1 (40x40) items.
     /// </summary>
     public ObservableCollection<DockAppItem> DockApps { get; } = new();
@@ -523,6 +561,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand PinOpenWindowCommand { get; }
     public ICommand MoveDockAppLeftCommand { get; }
     public ICommand MoveDockAppRightCommand { get; }
+    public ICommand MoveDockItemLeftCommand { get; }
+    public ICommand MoveDockItemRightCommand { get; }
 
     public ICommand PlayPauseCommand { get; }
     public ICommand NextTrackCommand { get; }
@@ -587,10 +627,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         MoveDockAppLeftCommand = new RelayCommand(param =>
         {
             if (param is DockAppItem item) MoveDockAppLeft(item);
+            else if (param is IDockOrderableItem orderable) MoveDockItemLeft(orderable);
         });
         MoveDockAppRightCommand = new RelayCommand(param =>
         {
             if (param is DockAppItem item) MoveDockAppRight(item);
+            else if (param is IDockOrderableItem orderable) MoveDockItemRight(orderable);
+        });
+        MoveDockItemLeftCommand = new RelayCommand(param =>
+        {
+            if (param is IDockOrderableItem item) MoveDockItemLeft(item);
+        });
+        MoveDockItemRightCommand = new RelayCommand(param =>
+        {
+            if (param is IDockOrderableItem item) MoveDockItemRight(item);
         });
 
         PlayPauseCommand = new RelayCommand(ExecutePlayPause);
@@ -780,11 +830,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         void AddWidget(DockWidgetItem item)
         {
+            item.MoveLeftCommand = new RelayCommand(() => MoveDockItemLeft(item));
+            item.MoveRightCommand = new RelayCommand(() => MoveDockItemRight(item));
             item.PropertyChanged += (s, e) =>
             {
-                if (e.PropertyName == nameof(DockWidgetItem.IsVisible) && item.IsVisible)
+                if (e.PropertyName == nameof(DockWidgetItem.IsVisible))
                 {
-                    AreWidgetsVisible = true;
+                    if (item.IsVisible)
+                    {
+                        AreWidgetsVisible = true;
+                    }
+                    SyncUnifiedDockStrip();
                 }
             };
             DockWidgets.Add(item);
@@ -859,6 +915,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             AreWidgetsVisible = true;
         }
+        SyncUnifiedDockStrip();
     }
 
     public IntPtr ExcludeWindowHandle
@@ -1344,7 +1401,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
 
         var targetItems = new List<DockAppItem>();
-        var activeKeys = new List<string>();
 
         // Place all items with an established custom position
         foreach (var key in _customDockOrderKeys)
@@ -1352,7 +1408,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             if (candidateByKey.TryGetValue(key, out var item))
             {
                 targetItems.Add(item);
-                activeKeys.Add(key);
                 candidateByKey.Remove(key);
             }
         }
@@ -1360,19 +1415,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         // Append any new candidates (newly opened windows or added pins)
         foreach (var remaining in candidateByKey.Values)
         {
-            string key = GetDockAppKey(remaining);
             targetItems.Add(remaining);
-            activeKeys.Add(key);
         }
-
-        _customDockOrderKeys.Clear();
-        _customDockOrderKeys.AddRange(activeKeys);
 
         // Synchronize into DockApps collection in-place to avoid visual flickering
         SyncDockApps(targetItems);
 
         // Also update OpenAppsForPinning (for CustomizationWindow 1-click pinning)
         SyncOpenAppsForPinning(windows, pinnedShortcuts);
+
+        // Synchronize unified interleaved dock strip (apps + visible widgets)
+        SyncUnifiedDockStrip();
     }
 
     private static bool IsWindowMatchForShortcut(AppWindowInfo win, DockShortcut shortcut)
@@ -1419,6 +1472,66 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return $"proc:{item.ProcessName.ToLowerInvariant()}";
     }
 
+    /// <summary>
+    /// Requirement (Sprint 6): Unified engine for reordering any dock item (apps or widgets).
+    /// </summary>
+    public void MoveDockItem(int fromIndex, int toIndex)
+    {
+        if (fromIndex < 0 || fromIndex >= DockStripItems.Count || toIndex < 0 || toIndex >= DockStripItems.Count || fromIndex == toIndex)
+        {
+            return;
+        }
+
+        DockStripItems.Move(fromIndex, toIndex);
+
+        _customDockOrderKeys.Clear();
+        foreach (var item in DockStripItems)
+        {
+            _customDockOrderKeys.Add(item.DockOrderKey);
+        }
+
+        SyncPinnedOrderFromDockApps();
+        SyncDockWidgetsOrderFromStrip();
+    }
+
+    public void MoveDockItemLeft(IDockOrderableItem item)
+    {
+        if (item == null) return;
+        int idx = DockStripItems.IndexOf(item);
+        if (idx > 0)
+        {
+            MoveDockItem(idx, idx - 1);
+        }
+        else if (item is DockWidgetItem widget)
+        {
+            int wIdx = DockWidgets.IndexOf(widget);
+            if (wIdx > 0)
+            {
+                DockWidgets.Move(wIdx, wIdx - 1);
+                SyncUnifiedDockStrip();
+            }
+        }
+    }
+
+    public void MoveDockItemRight(IDockOrderableItem item)
+    {
+        if (item == null) return;
+        int idx = DockStripItems.IndexOf(item);
+        if (idx >= 0 && idx < DockStripItems.Count - 1)
+        {
+            MoveDockItem(idx, idx + 1);
+        }
+        else if (item is DockWidgetItem widget)
+        {
+            int wIdx = DockWidgets.IndexOf(widget);
+            if (wIdx >= 0 && wIdx < DockWidgets.Count - 1)
+            {
+                DockWidgets.Move(wIdx, wIdx + 1);
+                SyncUnifiedDockStrip();
+            }
+        }
+    }
+
     public void MoveDockApp(int fromIndex, int toIndex)
     {
         if (fromIndex < 0 || fromIndex >= DockApps.Count || toIndex < 0 || toIndex >= DockApps.Count || fromIndex == toIndex)
@@ -1426,34 +1539,159 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             return;
         }
 
-        DockApps.Move(fromIndex, toIndex);
+        var source = DockApps[fromIndex];
+        var target = DockApps[toIndex];
+        int sIdx = DockStripItems.IndexOf(source);
+        int tIdx = DockStripItems.IndexOf(target);
 
-        _customDockOrderKeys.Clear();
+        if (sIdx >= 0 && tIdx >= 0 && sIdx != tIdx)
+        {
+            MoveDockItem(sIdx, tIdx);
+        }
+        else
+        {
+            DockApps.Move(fromIndex, toIndex);
+            SyncUnifiedDockStrip();
+        }
+    }
+
+    public void MoveDockAppLeft(DockAppItem item) => MoveDockItemLeft(item);
+    public void MoveDockAppRight(DockAppItem item) => MoveDockItemRight(item);
+
+    public void SyncUnifiedDockStrip()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        var activeCandidates = new List<IDockOrderableItem>();
         foreach (var app in DockApps)
         {
-            _customDockOrderKeys.Add(GetDockAppKey(app));
+            activeCandidates.Add(app);
+        }
+        foreach (var widget in DockWidgets)
+        {
+            if (widget.IsVisible)
+            {
+                activeCandidates.Add(widget);
+            }
         }
 
-        SyncPinnedOrderFromDockApps();
+        var candidateByKey = new Dictionary<string, IDockOrderableItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in activeCandidates)
+        {
+            candidateByKey[c.DockOrderKey] = c;
+        }
+
+        if (_customDockOrderKeys.Count == 0)
+        {
+            if (DockStripItems.Count > 0)
+            {
+                foreach (var item in DockStripItems)
+                {
+                    _customDockOrderKeys.Add(item.DockOrderKey);
+                }
+            }
+            else
+            {
+                foreach (var item in activeCandidates)
+                {
+                    _customDockOrderKeys.Add(item.DockOrderKey);
+                }
+            }
+        }
+
+        var orderedStrip = new List<IDockOrderableItem>();
+        var activeKeys = new List<string>();
+
+        foreach (var key in _customDockOrderKeys)
+        {
+            if (candidateByKey.TryGetValue(key, out var item))
+            {
+                orderedStrip.Add(item);
+                activeKeys.Add(key);
+                candidateByKey.Remove(key);
+            }
+        }
+
+        foreach (var remaining in candidateByKey.Values)
+        {
+            orderedStrip.Add(remaining);
+            activeKeys.Add(remaining.DockOrderKey);
+        }
+
+        _customDockOrderKeys.Clear();
+        _customDockOrderKeys.AddRange(activeKeys);
+
+        SyncDockStripItems(orderedStrip);
     }
 
-    public void MoveDockAppLeft(DockAppItem item)
+    private void SyncDockStripItems(List<IDockOrderableItem> target)
     {
-        if (item == null) return;
-        int idx = DockApps.IndexOf(item);
-        if (idx > 0)
+        for (int i = 0; i < target.Count; i++)
         {
-            MoveDockApp(idx, idx - 1);
+            var newItem = target[i];
+
+            int existingIndex = -1;
+            for (int j = i; j < DockStripItems.Count; j++)
+            {
+                if (string.Equals(DockStripItems[j].DockOrderKey, newItem.DockOrderKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    existingIndex = j;
+                    break;
+                }
+            }
+
+            if (existingIndex == i)
+            {
+                if (!ReferenceEquals(DockStripItems[i], newItem))
+                {
+                    DockStripItems[i] = newItem;
+                }
+            }
+            else if (existingIndex > i)
+            {
+                DockStripItems.Move(existingIndex, i);
+            }
+            else
+            {
+                DockStripItems.Insert(i, newItem);
+            }
+        }
+
+        while (DockStripItems.Count > target.Count)
+        {
+            DockStripItems.RemoveAt(DockStripItems.Count - 1);
         }
     }
 
-    public void MoveDockAppRight(DockAppItem item)
+    private void SyncDockWidgetsOrderFromStrip()
     {
-        if (item == null) return;
-        int idx = DockApps.IndexOf(item);
-        if (idx >= 0 && idx < DockApps.Count - 1)
+        var widgetOrder = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        int order = 0;
+        foreach (var item in DockStripItems)
         {
-            MoveDockApp(idx, idx + 1);
+            if (item is DockWidgetItem w)
+            {
+                widgetOrder[w.Id] = order++;
+            }
+        }
+
+        if (widgetOrder.Count > 0)
+        {
+            var sortedWidgets = DockWidgets
+                .OrderBy(w => widgetOrder.TryGetValue(w.Id, out int idx) ? idx : int.MaxValue)
+                .ToList();
+
+            for (int i = 0; i < sortedWidgets.Count; i++)
+            {
+                int curIdx = DockWidgets.IndexOf(sortedWidgets[i]);
+                if (curIdx != i && curIdx >= 0)
+                {
+                    DockWidgets.Move(curIdx, i);
+                }
+            }
         }
     }
 
@@ -1951,25 +2189,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void ExecuteMoveWidgetUp(object? parameter)
     {
-        if (parameter is DockWidgetItem item)
+        if (parameter is IDockOrderableItem item)
         {
-            int idx = DockWidgets.IndexOf(item);
-            if (idx > 0)
-            {
-                DockWidgets.Move(idx, idx - 1);
-            }
+            MoveDockItemLeft(item);
         }
     }
 
     private void ExecuteMoveWidgetDown(object? parameter)
     {
-        if (parameter is DockWidgetItem item)
+        if (parameter is IDockOrderableItem item)
         {
-            int idx = DockWidgets.IndexOf(item);
-            if (idx >= 0 && idx < DockWidgets.Count - 1)
-            {
-                DockWidgets.Move(idx, idx + 1);
-            }
+            MoveDockItemRight(item);
         }
     }
 

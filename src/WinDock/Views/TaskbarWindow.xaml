@@ -1,6 +1,7 @@
 <Window x:Class="WinDock.Views.TaskbarWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:WinDock.ViewModels"
         Title="WinDock"
         Height="48"
         WindowStyle="None"
@@ -249,15 +250,134 @@
             </Setter>
         </Style>
 
+        <!-- DataTemplate for 1x1 Dock App Items (Unified with DockStripItems) -->
+        <DataTemplate DataType="{x:Type vm:DockAppItem}">
+            <Button Style="{StaticResource UnifiedDockAppSlotStyle}"
+                    Command="{Binding ClickCommand}"
+                    ToolTip="{Binding Title}"
+                    PreviewMouseLeftButtonDown="DockItem_PreviewMouseLeftButtonDown"
+                    PreviewMouseMove="DockItem_PreviewMouseMove"
+                    PreviewMouseLeftButtonUp="DockItem_PreviewMouseLeftButtonUp">
+                
+                <!-- Right-click dark context menu for any app icon -->
+                <Button.ContextMenu>
+                    <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
+                        <!-- Fixar / Desafixar da Dock: saves to JSON immediately! -->
+                        <MenuItem Header="{Binding PinMenuText}"
+                                  Command="{Binding TogglePinCommand}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="📌" FontSize="11" Foreground="{DynamicResource AccentColorBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+
+                        <!-- Mover para a Esquerda / Direita -->
+                        <MenuItem Header="◄ Mover para a Esquerda"
+                                  Command="{Binding MoveLeftCommand}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="◀" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Header="► Mover para a Direita"
+                                  Command="{Binding MoveRightCommand}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="▶" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+
+                        <!-- Personalizar Dock... -->
+                        <MenuItem Header="Personalizar Dock..."
+                                  Command="{Binding DataContext.OpenCustomizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="⚙" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <!-- Alternar Barra do Windows -->
+                        <MenuItem Header="Alternar Barra do Windows"
+                                  Command="{Binding DataContext.ToggleNativeTaskbarCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="🪟" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+
+                        <!-- Sair do WinDock -->
+                        <MenuItem Header="Sair do WinDock"
+                                  Command="{Binding DataContext.ExitAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="✕" FontSize="11" Foreground="{DynamicResource AccentRedBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Button.ContextMenu>
+
+                <!-- Real App Icon slot -->
+                <Grid Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Image Source="{Binding Icon}"
+                           Width="20"
+                           Height="20"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                </Grid>
+            </Button>
+        </DataTemplate>
+
         <!-- DataTemplate for Modular Dock Widgets (Harmonized with UnifiedDockAppSlotStyle) -->
-        <DataTemplate x:Key="DockWidgetTemplate">
+        <DataTemplate DataType="{x:Type vm:DockWidgetItem}">
             <Border x:Name="WidgetRoot"
                     Height="38"
                     Width="{Binding TargetWidth}"
                     CornerRadius="10"
                     Margin="1,0"
                     Padding="3,0"
-                    ToolTip="{Binding Description}">
+                    Cursor="Hand"
+                    ToolTip="{Binding Description}"
+                    PreviewMouseLeftButtonDown="DockItem_PreviewMouseLeftButtonDown"
+                    PreviewMouseMove="DockItem_PreviewMouseMove"
+                    PreviewMouseLeftButtonUp="DockItem_PreviewMouseLeftButtonUp">
+                
+                <!-- Right-click dark context menu for dock widgets -->
+                <Border.ContextMenu>
+                    <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
+                        <MenuItem Header="{Binding Title}" IsEnabled="False" Style="{StaticResource DarkMenuItemStyle}" FontWeight="SemiBold" />
+                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+                        <MenuItem Header="◄ Mover para a Esquerda"
+                                  Command="{Binding MoveLeftCommand}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="◀" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="► Mover para a Direita"
+                                  Command="{Binding MoveRightCommand}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="▶" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+                        <MenuItem Header="Personalizar Dock..."
+                                  Command="{Binding DataContext.OpenCustomizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  Style="{StaticResource DarkMenuItemStyle}">
+                            <MenuItem.Icon>
+                                <TextBlock Text="⚙" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Border.ContextMenu>
+
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Background" Value="Transparent" />
@@ -269,6 +389,11 @@
                                 <Setter Property="Background" Value="{DynamicResource PillHoverBrush}" />
                                 <Setter Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
                             </Trigger>
+                            <DataTrigger Binding="{Binding IsDragging}" Value="True">
+                                <Setter Property="Opacity" Value="0.65" />
+                                <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
@@ -721,113 +846,14 @@
             <!-- ONE CLEAN UNIFIED HORIZONTAL STRIP: Open Apps + Pinned Apps (1x1 items) + One subtle gear button at the end! -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
 
-                <!-- Requirement (2): UNIFIED DOCK APPS (1x1 40x40 items) -->
-                <!-- Combines user-pinned apps and open windows into one unified collection with real icons & active indicators! -->
-                <ItemsControl x:Name="DockAppsItemsControl" ItemsSource="{Binding DockApps}">
+                <!-- Requirement (Sprint 6): UNIFIED INTERLEAVED DOCK STRIP (Apps + Widgets freely mixed!) -->
+                <!-- Combines open apps, pinned apps, and modular dock widgets in one freely reorderable horizontal strip -->
+                <ItemsControl x:Name="UnifiedDockItemsControl" ItemsSource="{Binding DockStripItems}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Style="{StaticResource UnifiedDockAppSlotStyle}"
-                                    Command="{Binding ClickCommand}"
-                                    ToolTip="{Binding Title}"
-                                    PreviewMouseLeftButtonDown="DockAppButton_PreviewMouseLeftButtonDown"
-                                    PreviewMouseMove="DockAppButton_PreviewMouseMove"
-                                    PreviewMouseLeftButtonUp="DockAppButton_PreviewMouseLeftButtonUp">
-                                
-                                <!-- Right-click dark context menu for any app icon -->
-                                <Button.ContextMenu>
-                                    <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
-                                        <!-- Fixar / Desafixar da Dock: saves to JSON immediately! -->
-                                        <MenuItem Header="{Binding PinMenuText}"
-                                                  Command="{Binding TogglePinCommand}"
-                                                  Style="{StaticResource DarkMenuItemStyle}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Text="📌" FontSize="11" Foreground="{DynamicResource AccentColorBrush}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-
-                                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
-
-                                        <!-- Mover para a Esquerda / Direita -->
-                                        <MenuItem Header="◄ Mover para a Esquerda"
-                                                  Command="{Binding MoveLeftCommand}"
-                                                  Style="{StaticResource DarkMenuItemStyle}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Text="◀" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-
-                                        <MenuItem Header="► Mover para a Direita"
-                                                  Command="{Binding MoveRightCommand}"
-                                                  Style="{StaticResource DarkMenuItemStyle}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Text="▶" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-
-                                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
-
-                                        <!-- Personalizar Dock... -->
-                                        <MenuItem Header="Personalizar Dock..."
-                                                  Command="{Binding DataContext.OpenCustomizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  Style="{StaticResource DarkMenuItemStyle}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Text="⚙" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-
-                                        <!-- Alternar Barra do Windows -->
-                                        <MenuItem Header="Alternar Barra do Windows"
-                                                  Command="{Binding DataContext.ToggleNativeTaskbarCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  Style="{StaticResource DarkMenuItemStyle}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Text="🪟" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-
-                                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
-
-                                        <!-- Sair do WinDock -->
-                                        <MenuItem Header="Sair do WinDock"
-                                                  Command="{Binding DataContext.ExitAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  Style="{StaticResource DarkMenuItemStyle}">
-                                            <MenuItem.Icon>
-                                                <TextBlock Text="✕" FontSize="11" Foreground="{DynamicResource AccentRedBrush}" />
-                                            </MenuItem.Icon>
-                                        </MenuItem>
-                                    </ContextMenu>
-                                </Button.ContextMenu>
-
-                                <!-- Real App Icon slot -->
-                                <Grid Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Image Source="{Binding Icon}"
-                                           Width="20"
-                                           Height="20"
-                                           Stretch="Uniform"
-                                           RenderOptions.BitmapScalingMode="HighQuality" />
-                                </Grid>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Modular Dock Widgets (all IsVisible=false by default so dock starts 100% clean) -->
-                <ItemsControl ItemsSource="{Binding DockWidgets}"
-                              ItemTemplate="{StaticResource DockWidgetTemplate}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemContainerStyle>
-                        <Style TargetType="ContentPresenter">
-                            <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource BoolToVis}}" />
-                        </Style>
-                    </ItemsControl.ItemContainerStyle>
                 </ItemsControl>
 
                 <!-- Subtle Separator before settings gear button -->

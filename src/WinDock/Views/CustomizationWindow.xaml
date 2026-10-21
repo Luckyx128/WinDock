@@ -68,18 +68,18 @@
 
                             <Border x:Name="SwitchTrack"
                                     Grid.Column="0"
-                                    Width="38"
-                                    Height="20"
-                                    CornerRadius="10"
+                                    Width="36"
+                                    Height="18"
+                                    CornerRadius="9"
                                     Background="#262F40"
                                     BorderBrush="{DynamicResource BarBorderBrush}"
                                     BorderThickness="1">
                                 <Ellipse x:Name="SwitchThumb"
-                                         Width="14"
-                                         Height="14"
+                                         Width="12"
+                                         Height="12"
                                          Fill="{DynamicResource TextSecondaryBrush}"
                                          HorizontalAlignment="Left"
-                                         Margin="3,0,0,0" />
+                                         Margin="2.5,0,0,0" />
                             </Border>
 
                             <ContentPresenter Grid.Column="1"
@@ -93,7 +93,7 @@
                                 <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
                                 <Setter TargetName="SwitchThumb" Property="Fill" Value="#090D14" />
                                 <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right" />
-                                <Setter TargetName="SwitchThumb" Property="Margin" Value="0,0,3,0" />
+                                <Setter TargetName="SwitchThumb" Property="Margin" Value="0,0,2.5,0" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="SwitchTrack" Property="Opacity" Value="0.9" />
@@ -110,7 +110,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="Padding" Value="9,4" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FontWeight" Value="Medium" />
             <Setter Property="FontSize" Value="11" />
@@ -122,7 +122,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="8"
+                                CornerRadius="7"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
@@ -175,8 +175,8 @@
             <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="16" />
-            <Setter Property="Margin" Value="0,0,0,14" />
+            <Setter Property="Padding" Value="14" />
+            <Setter Property="Margin" Value="0,0,0,12" />
         </Style>
 
         <!-- Sidebar ListBox Item Style -->
@@ -232,441 +232,360 @@
             </Setter>
         </Style>
 
-        <!-- Live Widget Preview Template for DockWidgetItem Gallery -->
-        <DataTemplate x:Key="LiveWidgetCardTemplate">
-            <Border Style="{StaticResource SettingsCardStyle}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <!-- Top: Icon, Title, Description, and Visibility Toggle -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Middle: Live Dock Stage Preview -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Bottom: Size Selection & Reorder Controls -->
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+        <!-- ================= MINIMALIST 52PX WIDGET ROW TEMPLATE ================= -->
+        <DataTemplate x:Key="CompactWidgetRowTemplate">
+            <Border Background="{DynamicResource PillBackgroundBrush}"
+                    BorderBrush="{DynamicResource BarBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10,6"
+                    Margin="0,0,0,6">
+                <Grid Height="40">
+                    <Grid.ColumnDefinitions>
+                        <!-- Live Mini-Stage (40 / 82 / 124px) -->
+                        <ColumnDefinition Width="134" />
+                        <!-- Title & Glyph -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Size Selector (1x1 | 1x2 | 1x3) -->
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Reorder ◄ / ► -->
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Toggle Switch -->
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- HEADER -->
-                    <Grid Grid.Row="0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border Width="34" Height="34" CornerRadius="8"
-                                    Background="{DynamicResource PillBackgroundBrush}"
-                                    BorderBrush="{DynamicResource BarBorderBrush}"
-                                    BorderThickness="1"
-                                    Margin="0,0,12,0">
-                                <TextBlock Text="{Binding IconGlyph}" FontSize="16"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                <TextBlock Text="{Binding Description}" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
-                            </StackPanel>
-                        </StackPanel>
-
-                        <!-- Modern Toggle Switch -->
-                        <CheckBox Grid.Column="1"
-                                  Style="{StaticResource ModernToggleSwitchStyle}"
-                                  IsChecked="{Binding IsVisible}"
-                                  VerticalAlignment="Center"
-                                  ToolTip="Ativar ou desativar este widget na Dock" />
-                    </Grid>
-
-                    <!-- LIVE DOCK STAGE (MINI PALCO DA DOCK) -->
-                    <Border Grid.Row="1"
-                            Background="{DynamicResource BarBackgroundBrush}"
+                    <!-- 1. LIVE WIDGET MINI-STAGE -->
+                    <Border Grid.Column="0"
+                            Width="{Binding TargetWidth}"
+                            Height="34"
+                            HorizontalAlignment="Left"
+                            Background="#0C0F16"
                             BorderBrush="{DynamicResource BarBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="10"
-                            Padding="14,10"
-                            Margin="0,12,0,12">
+                            CornerRadius="7"
+                            ClipToBounds="True"
+                            VerticalAlignment="Center">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                            <!-- HARDWARE PREVIEW -->
+                            <Grid x:Name="HardwarePreview" Visibility="Collapsed">
+                                <!-- 1x1: CPU gauge % + text -->
+                                <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="C " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Text="{Binding DataContext.CpuText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                        </StackPanel>
+                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                     Width="30"
+                                                     Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                     Foreground="{DynamicResource AccentCyanBrush}" Margin="0,1.5,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                                <!-- 1x2: CPU & RAM -->
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Vertical" Width="36" Margin="0,0,4,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="C " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding DataContext.CpuText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                            </StackPanel>
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                         Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                         Foreground="{DynamicResource AccentCyanBrush}" Margin="0,1.5,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Vertical" Width="36">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="R " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding DataContext.RamText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreenBrush}" />
+                                            </StackPanel>
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                         Value="{Binding DataContext.RamPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                         Foreground="{DynamicResource AccentGreenBrush}" Margin="0,1.5,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <!-- 1x3: CPU, GPU & RAM -->
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Vertical" Width="36" Margin="0,0,4,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="C " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding DataContext.CpuText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
+                                            </StackPanel>
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                         Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                         Foreground="{DynamicResource AccentCyanBrush}" Margin="0,1.5,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Vertical" Width="36" Margin="0,0,4,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="G " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding DataContext.GpuText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentPurpleBrush}" />
+                                            </StackPanel>
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                         Value="{Binding DataContext.GpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                         Foreground="{DynamicResource AccentPurpleBrush}" Margin="0,1.5,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Vertical" Width="36">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <TextBlock Text="R " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                <TextBlock Text="{Binding DataContext.RamText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                           FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreenBrush}" />
+                                            </StackPanel>
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}"
+                                                         Value="{Binding DataContext.RamPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                         Foreground="{DynamicResource AccentGreenBrush}" Margin="0,1.5,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
 
-                            <!-- Live Stage Header Info -->
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
-                                <Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource AccentGreenBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                                <TextBlock Text="PRÉVIA NA DOCK (LIVE PREVIEW)" FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMutedBrush}" />
-                                <TextBlock Text=" • " FontSize="9" Foreground="{DynamicResource TextMutedBrush}" />
-                                <TextBlock Text="{Binding SizeLabel}" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentColorBrush}" />
-                            </StackPanel>
+                            <!-- MEDIA PREVIEW -->
+                            <Grid x:Name="MediaPreview" Visibility="Collapsed">
+                                <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                                    <Path Data="M4 2v12l9-6z M15 2h2v12h-2z"
+                                          Stretch="Uniform" Width="12" Height="12"
+                                          Fill="{DynamicResource AccentCyanBrush}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
+                                              Width="13" Height="9" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" Margin="0,0,4,0" />
+                                        <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
+                                              Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,4,0" />
+                                        <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
+                                              Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Path Data="M14 12V2L8 7zm-6 0V2L2 7zm-6 0V2H0v10z"
+                                              Width="9" Height="9" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0" />
+                                        <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
+                                              Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,4,0" />
+                                        <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
+                                              Width="9" Height="9" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,5,0" />
+                                        <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
+                                              Width="13" Height="9" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
 
-                            <!-- Mini Dock Bar Slot Container -->
-                            <Border Grid.Row="1"
-                                    HorizontalAlignment="Left"
-                                    Background="#0A0D13"
-                                    BorderBrush="{DynamicResource WindowBorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
-                                    Padding="4,2">
-                                <Border Width="{Binding TargetWidth}"
-                                        Height="38"
-                                        Background="{DynamicResource PillBackgroundBrush}"
-                                        BorderBrush="{DynamicResource BarBorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="8"
-                                        ClipToBounds="True">
-                                    <Grid>
-                                        <!-- HARDWARE PREVIEW -->
-                                        <Grid x:Name="HardwarePreview" Visibility="Collapsed">
-                                            <!-- 1x1: CPU gauge % + text -->
-                                            <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <TextBlock Text="C " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                        <TextBlock Text="{Binding DataContext.CpuText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                   FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
-                                                    </StackPanel>
-                                                    <ProgressBar Style="{StaticResource MiniGaugeStyle}"
-                                                                 Width="30"
-                                                                 Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                 Foreground="{DynamicResource AccentCyanBrush}" Margin="0,2,0,0" />
-                                                </StackPanel>
-                                            </Grid>
+                            <!-- STEAM PREVIEW -->
+                            <Grid x:Name="SteamPreview" Visibility="Collapsed">
+                                <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                                    <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
+                                          Stretch="Uniform" Width="16" Height="12"
+                                          Fill="{DynamicResource AccentCyanBrush}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
+                                              Stretch="Uniform" Width="13" Height="10"
+                                              Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" FontWeight="Medium" MaxWidth="54" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
+                                              Stretch="Uniform" Width="14" Height="11"
+                                              Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" FontWeight="Medium" MaxWidth="92" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
 
-                                            <!-- 1x2: CPU & RAM -->
-                                            <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Vertical" Width="36" Margin="0,0,4,0">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <TextBlock Text="C " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                            <TextBlock Text="{Binding DataContext.CpuText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
-                                                        </StackPanel>
-                                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
-                                                                     Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                     Foreground="{DynamicResource AccentCyanBrush}" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Vertical" Width="36">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <TextBlock Text="R " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                            <TextBlock Text="{Binding DataContext.RamText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreenBrush}" />
-                                                        </StackPanel>
-                                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
-                                                                     Value="{Binding DataContext.RamPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                     Foreground="{DynamicResource AccentGreenBrush}" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Grid>
+                            <!-- DISCORD PREVIEW -->
+                            <Grid x:Name="DiscordPreview" Visibility="Collapsed">
+                                <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                                    <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
+                                          Stretch="Uniform" Width="16" Height="11"
+                                          Fill="{DynamicResource AccentCyanBrush}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
+                                              Stretch="Uniform" Width="13" Height="10"
+                                              Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" FontWeight="Medium" MaxWidth="54" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
+                                              Stretch="Uniform" Width="14" Height="11"
+                                              Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" FontWeight="Medium" MaxWidth="92" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
 
-                                            <!-- 1x3: CPU, GPU & RAM -->
-                                            <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Vertical" Width="36" Margin="0,0,4,0">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <TextBlock Text="C " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                            <TextBlock Text="{Binding DataContext.CpuText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
-                                                        </StackPanel>
-                                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
-                                                                     Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                     Foreground="{DynamicResource AccentCyanBrush}" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Vertical" Width="36" Margin="0,0,4,0">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <TextBlock Text="G " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                            <TextBlock Text="{Binding DataContext.GpuText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentPurpleBrush}" />
-                                                        </StackPanel>
-                                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
-                                                                     Value="{Binding DataContext.GpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                     Foreground="{DynamicResource AccentPurpleBrush}" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Vertical" Width="36">
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                            <TextBlock Text="R " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                            <TextBlock Text="{Binding DataContext.RamText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreenBrush}" />
-                                                        </StackPanel>
-                                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}"
-                                                                     Value="{Binding DataContext.RamPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                     Foreground="{DynamicResource AccentGreenBrush}" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
+                            <!-- AI PREVIEW -->
+                            <Grid x:Name="AiPreview" Visibility="Collapsed">
+                                <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Path Data="M9.5 0l2.1 5.4 5.4 2.1-5.4 2.1-2.1 5.4-2.1-5.4-5.4-2.1 5.4-2.1z"
+                                              Stretch="Uniform" Width="10" Height="10"
+                                              Fill="{DynamicResource AccentPurpleBrush}" />
+                                        <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="9" FontWeight="SemiBold" Margin="2,0,0,0"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Path Data="M9.5 0l2.1 5.4 5.4 2.1-5.4 2.1-2.1 5.4-2.1-5.4-5.4-2.1 5.4-2.1z"
+                                              Stretch="Uniform" Width="11" Height="11"
+                                              Fill="{DynamicResource AccentPurpleBrush}" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="IA: " FontSize="8.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Text=" req" FontSize="8" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Path Data="M9.5 0l2.1 5.4 5.4 2.1-5.4 2.1-2.1 5.4-2.1-5.4-5.4-2.1 5.4-2.1z"
+                                              Stretch="Uniform" Width="12" Height="12"
+                                              Fill="{DynamicResource AccentPurpleBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="IA Total: " FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Text=" reqs" FontSize="8" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
 
-                                        <!-- MEDIA PREVIEW -->
-                                        <Grid x:Name="MediaPreview" Visibility="Collapsed">
-                                            <!-- 1x1: Play/Pause vector -->
-                                            <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                                <Path Data="M4 2v12l9-6z M15 2h2v12h-2z"
-                                                      Stretch="Uniform" Width="13" Height="13"
-                                                      Fill="{DynamicResource AccentCyanBrush}"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                            <!-- 1x2: YouTube + Play/Pause + Next Track -->
-                                            <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
-                                                          Width="14" Height="10" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" Margin="0,0,4,0" />
-                                                    <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,4,0" />
-                                                    <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
-                                                </StackPanel>
-                                            </Grid>
-                                            <!-- 1x3: Prev + Play/Pause + Next + YouTube -->
-                                            <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <Path Data="M14 12V2L8 7zm-6 0V2L2 7zm-6 0V2H0v10z"
-                                                          Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,5,0" />
-                                                    <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,5,0" />
-                                                    <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                                          Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,6,0" />
-                                                    <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
-                                                          Width="14" Height="10" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-
-                                        <!-- STEAM PREVIEW -->
-                                        <Grid x:Name="SteamPreview" Visibility="Collapsed">
-                                            <!-- 1x1: Gamepad vector -->
-                                            <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                                <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
-                                                      Stretch="Uniform" Width="18" Height="14"
-                                                      Fill="{DynamicResource AccentCyanBrush}"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                            <!-- 1x2: Gamepad + Headline -->
-                                            <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
-                                                          Stretch="Uniform" Width="14" Height="11"
-                                                          Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="9.5" FontWeight="Medium" MaxWidth="54" TextTrimming="CharacterEllipsis"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Grid>
-                                            <!-- 1x3: Gamepad + Full Headline -->
-                                            <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <Path Data="M5 4C2.24 4 0 6.24 0 9c0 2.22 1.45 4.1 3.48 4.75l2.25 4.5A2.5 2.5 0 0 0 7.96 20h.08a2.5 2.5 0 0 0 2.45-1.95L11.4 14h1.2l.91 4.05A2.5 2.5 0 0 0 15.96 20h.08a2.5 2.5 0 0 0 2.23-1.75l2.25-4.5C22.55 13.1 24 11.22 24 9c0-2.76-2.24-5-5-5H5zm2 3h2v2h2v2H9v2H7v-2H5V9h2V7zm10 1a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2 2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-2-2.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5z"
-                                                          Stretch="Uniform" Width="15" Height="12"
-                                                          Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="9.5" FontWeight="Medium" MaxWidth="92" TextTrimming="CharacterEllipsis"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-
-                                        <!-- DISCORD PREVIEW -->
-                                        <Grid x:Name="DiscordPreview" Visibility="Collapsed">
-                                            <!-- 1x1: Discord Clyde vector -->
-                                            <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                                <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
-                                                      Stretch="Uniform" Width="18" Height="13"
-                                                      Fill="{DynamicResource AccentCyanBrush}"
-                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                            <!-- 1x2: Discord + SubText -->
-                                            <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
-                                                          Stretch="Uniform" Width="14" Height="11"
-                                                          Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="9.5" FontWeight="Medium" MaxWidth="54" TextTrimming="CharacterEllipsis"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Grid>
-                                            <!-- 1x3: Discord + Full Presence -->
-                                            <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <Path Data="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01 0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95 0 .02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06 0 .07-.02.4-.55.76-1.13 1.07-1.74.02-.04 0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55 0 .02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.08-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.03-.02zM8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.84 2.12-1.89 2.12zm6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12 0 1.17-.83 2.12-1.89 2.12z"
-                                                          Stretch="Uniform" Width="15" Height="12"
-                                                          Fill="{DynamicResource AccentCyanBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="9.5" FontWeight="Medium" MaxWidth="92" TextTrimming="CharacterEllipsis"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-
-                                        <!-- AI PREVIEW -->
-                                        <Grid x:Name="AiPreview" Visibility="Collapsed">
-                                            <!-- 1x1: Sparkle + Counter -->
-                                            <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <Path Data="M9.5 0l2.1 5.4 5.4 2.1-5.4 2.1-2.1 5.4-2.1-5.4-5.4-2.1 5.4-2.1z"
-                                                          Stretch="Uniform" Width="11" Height="11"
-                                                          Fill="{DynamicResource AccentPurpleBrush}" />
-                                                    <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="9.5" FontWeight="SemiBold" Margin="2.5,0,0,0"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
-                                                </StackPanel>
-                                            </Grid>
-                                            <!-- 1x2: Sparkle + IA req -->
-                                            <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <Path Data="M9.5 0l2.1 5.4 5.4 2.1-5.4 2.1-2.1 5.4-2.1-5.4-5.4-2.1 5.4-2.1z"
-                                                          Stretch="Uniform" Width="12" Height="12"
-                                                          Fill="{DynamicResource AccentPurpleBrush}" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="IA: " FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                        <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                   FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                                        <TextBlock Text=" req" FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Grid>
-                                            <!-- 1x3: Sparkle + IA Total -->
-                                            <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <Path Data="M9.5 0l2.1 5.4 5.4 2.1-5.4 2.1-2.1 5.4-2.1-5.4-5.4-2.1 5.4-2.1z"
-                                                          Stretch="Uniform" Width="14" Height="14"
-                                                          Fill="{DynamicResource AccentPurpleBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="IA Total: " FontSize="9.5" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                        <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                   FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                                        <TextBlock Text=" reqs" FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-
-                                        <!-- CLOCK PREVIEW -->
-                                        <Grid x:Name="ClockPreview" Visibility="Collapsed">
-                                            <!-- 1x1: Time centered -->
-                                            <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                                <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                           FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                            <!-- 1x2: Time + Date -->
-                                            <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                                    <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"
-                                                               HorizontalAlignment="Center" />
-                                                    <TextBlock Text="{Binding DataContext.CurrentDateText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                               FontSize="8" Foreground="{DynamicResource TextSecondaryBrush}"
-                                                               HorizontalAlignment="Center" Margin="0,-1,0,0" />
-                                                </StackPanel>
-                                            </Grid>
-                                            <!-- 1x3: Clock icon + Time + Date -->
-                                            <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <Path Data="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 13H11V7h1.5v6.2l3.6 2.1-.8 1.3-4.3-2.6z"
-                                                          Stretch="Uniform" Width="13" Height="13" Fill="{DynamicResource AccentCyanBrush}"
-                                                          Margin="0,0,6,0" VerticalAlignment="Center" />
-                                                    <StackPanel VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                   FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                                        <TextBlock Text="{Binding DataContext.CurrentDateText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                   FontSize="8" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,-1,0,0" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-                                    </Grid>
-                                </Border>
-                            </Border>
+                            <!-- CLOCK PREVIEW -->
+                            <Grid x:Name="ClockPreview" Visibility="Collapsed">
+                                <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   HorizontalAlignment="Center" />
+                                        <TextBlock Text="{Binding DataContext.CurrentDateText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="7.5" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   HorizontalAlignment="Center" Margin="0,-1,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Path Data="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 13H11V7h1.5v6.2l3.6 2.1-.8 1.3-4.3-2.6z"
+                                              Stretch="Uniform" Width="12" Height="12" Fill="{DynamicResource AccentCyanBrush}"
+                                              Margin="0,0,5,0" VerticalAlignment="Center" />
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="10.5" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Text="{Binding DataContext.CurrentDateText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="7.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,-1,0,0" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
                         </Grid>
                     </Border>
 
-                    <!-- CONTROLS: SIZE SELECTOR & REORDER -->
-                    <Grid Grid.Row="2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Size Selector Pills -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Tamanho:" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
-
-                            <Button Content="1x1 (40px)"
-                                    ToolTip="Compacto: 1 slot (40px)"
-                                    Command="{Binding SetSize1x1Command}"
-                                    Padding="8,4" Margin="0,0,4,0">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSize1x1}" Value="True">
-                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
-                                                <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-
-                            <Button Content="1x2 (82px)"
-                                    ToolTip="Médio: 2 slots (82px)"
-                                    Command="{Binding SetSize1x2Command}"
-                                    Padding="8,4" Margin="0,0,4,0">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSize1x2}" Value="True">
-                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
-                                                <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-
-                            <Button Content="1x3 (124px)"
-                                    ToolTip="Expandido: 3 slots (124px)"
-                                    Command="{Binding SetSize1x3Command}"
-                                    Padding="8,4">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSize1x3}" Value="True">
-                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
-                                                <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
-                                                <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
-                                                <Setter Property="FontWeight" Value="SemiBold" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                    <!-- 2. TITLE & GLYPH -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                        <TextBlock Text="{Binding IconGlyph}" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                            <TextBlock Text="{Binding Description}" FontSize="9.5" Foreground="{DynamicResource TextSecondaryBrush}" MaxWidth="240" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
+                    </StackPanel>
 
-                        <!-- Reorder Controls -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Style="{StaticResource CardActionButtonStyle}"
-                                    ToolTip="Mover widget para o início da Dock (esquerda)"
-                                    Command="{Binding DataContext.MoveWidgetUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"
-                                    Padding="8,4" Margin="0,0,4,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="◄" FontSize="10" Margin="0,0,4,0" />
-                                    <TextBlock Text="Início" FontSize="11" />
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource CardActionButtonStyle}"
-                                    ToolTip="Mover widget para o final da Dock (direita)"
-                                    Command="{Binding DataContext.MoveWidgetDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"
-                                    Padding="8,4">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Fim" FontSize="11" Margin="0,0,4,0" />
-                                    <TextBlock Text="►" FontSize="10" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
+                    <!-- 3. COMPACT SIZE SELECTOR (1x1 | 1x2 | 1x3) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                        <Button Content="1x1" ToolTip="1x1 (40px) - Compacto" Command="{Binding SetSize1x1Command}" Padding="7,3" Margin="0,0,2,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSize1x1}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="1x2" ToolTip="1x2 (82px) - Médio" Command="{Binding SetSize1x2Command}" Padding="7,3" Margin="0,0,2,0">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSize1x2}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <Button Content="1x3" ToolTip="1x3 (124px) - Expandido" Command="{Binding SetSize1x3Command}" Padding="7,3">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSize1x3}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                                            <Setter Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource AccentColorBrush}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- 4. REORDER ◄ / ► -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
+                        <Button Style="{StaticResource CardActionButtonStyle}" ToolTip="Mover para esquerda na Dock"
+                                Command="{Binding MoveLeftCommand}"
+                                Padding="7,3" Margin="0,0,3,0">
+                            <TextBlock Text="◄" FontSize="9" />
+                        </Button>
+                        <Button Style="{StaticResource CardActionButtonStyle}" ToolTip="Mover para direita na Dock"
+                                Command="{Binding MoveRightCommand}"
+                                Padding="7,3">
+                            <TextBlock Text="►" FontSize="9" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- 5. TOGGLE SWITCH -->
+                    <CheckBox Grid.Column="4"
+                              Style="{StaticResource ModernToggleSwitchStyle}"
+                              IsChecked="{Binding IsVisible}"
+                              VerticalAlignment="Center"
+                              Margin="8,0,0,0"
+                              ToolTip="Ativar / Desativar este widget na Dock" />
                 </Grid>
             </Border>
 
@@ -692,27 +611,147 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Dock App Unified Item Template -->
-        <DataTemplate x:Key="DockAppItemTemplate">
+        <!-- ================= UNIFIED DOCK STRIP ITEM TEMPLATE (APPS + WIDGETS JUNTOS) ================= -->
+        <DataTemplate x:Key="UnifiedDockStripItemTemplate">
             <Border Background="{DynamicResource PillBackgroundBrush}"
                     BorderBrush="{DynamicResource BarBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
-                    Padding="10,8"
+                    Padding="10,6"
                     Margin="0,0,0,6">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <!-- App Icon & Info -->
-                        <ColumnDefinition Width="*" />
-                        <!-- Status Badges -->
+                        <!-- Icon (App Icon or Widget Glyph) -->
                         <ColumnDefinition Width="Auto" />
-                        <!-- Reorder Controls (◄ / ►) -->
+                        <!-- Title & Info -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Badges (Widget / App / Pinned / Open) -->
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Reorder ◄ / ► (Mesmo motor para ambos!) -->
                         <ColumnDefinition Width="Auto" />
                         <!-- Pin / Unpin 1-Click Action -->
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- App Icon & Information -->
+                    <!-- Icon Container -->
+                    <Border Grid.Column="0" Width="26" Height="26" CornerRadius="5" Background="#10141D" Margin="0,0,10,0" VerticalAlignment="Center">
+                        <Grid>
+                            <Image x:Name="AppIconImg" Source="{Binding Icon}" Width="20" Height="20" Stretch="Uniform" />
+                            <TextBlock x:Name="WidgetGlyphTxt" Text="{Binding IconGlyph}" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Title & Process / Status -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" MaxWidth="280" TextTrimming="CharacterEllipsis" />
+                            <!-- Focused Badge -->
+                            <Border x:Name="FocusBadge" Background="#2038BDF8" CornerRadius="4" Padding="5,1" Margin="6,0,0,0" Visibility="Collapsed">
+                                <TextBlock Text="Foco" FontSize="8.5" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock x:Name="SubInfoTxt" Text="{Binding ProcessName}" FontSize="9.5" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </StackPanel>
+
+                    <!-- Badges -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
+                        <!-- Widget or App Tag Badge -->
+                        <Border x:Name="TypeBadge" CornerRadius="4" Padding="6,2" Margin="0,0,4,0" Background="#15202E">
+                            <TextBlock x:Name="TypeBadgeTxt" Text="App" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </Border>
+
+                        <!-- Pinned State Badge -->
+                        <Border x:Name="PinnedBadge" CornerRadius="4" Padding="6,2" Margin="0,0,4,0" Background="#2238BDF8" Visibility="Collapsed">
+                            <TextBlock Text="📌 Fixado" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" />
+                        </Border>
+
+                        <!-- Open/Running Badge -->
+                        <Border x:Name="OpenBadge" CornerRadius="4" Padding="6,2" Background="#1822C55E" Visibility="Collapsed">
+                            <TextBlock Text="● Aberto" FontSize="9" FontWeight="SemiBold" Foreground="{DynamicResource AccentGreenBrush}" />
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Reorder ◄ / ► (Unified Motor) -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
+                        <Button Style="{StaticResource CardActionButtonStyle}"
+                                ToolTip="Mover para a esquerda na barra"
+                                Command="{Binding MoveLeftCommand}"
+                                Padding="8,4" Margin="0,0,3,0">
+                            <TextBlock Text="◄" FontSize="10" />
+                        </Button>
+                        <Button Style="{StaticResource CardActionButtonStyle}"
+                                ToolTip="Mover para a direita na barra"
+                                Command="{Binding MoveRightCommand}"
+                                Padding="8,4">
+                            <TextBlock Text="►" FontSize="10" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Pin / Unpin 1-Click Action (Apps only) -->
+                    <Button x:Name="PinActionBtn"
+                            Grid.Column="4"
+                            Command="{Binding TogglePinCommand}"
+                            Padding="10,4"
+                            Margin="6,0,0,0"
+                            VerticalAlignment="Center">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource CardActionButtonStyle}">
+                                <Setter Property="Content" Value="📌 Fixar" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                        <Setter Property="Content" Value="Desafixar" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentRedBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource AccentRedBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <DataTemplate.Triggers>
+                <!-- If item is a Widget -->
+                <DataTrigger Binding="{Binding IsWidget}" Value="True">
+                    <Setter TargetName="AppIconImg" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="WidgetGlyphTxt" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="TypeBadge" Property="Background" Value="#25A855F7" />
+                    <Setter TargetName="TypeBadgeTxt" Property="Text" Value="🧩 Widget" />
+                    <Setter TargetName="TypeBadgeTxt" Property="Foreground" Value="{DynamicResource AccentPurpleBrush}" />
+                    <Setter TargetName="SubInfoTxt" Property="Text" Value="Item Modular da Dock" />
+                    <Setter TargetName="PinActionBtn" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <!-- If app is Pinned -->
+                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                    <Setter TargetName="PinnedBadge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <!-- If app is Open -->
+                <DataTrigger Binding="{Binding IsOpen}" Value="True">
+                    <Setter TargetName="OpenBadge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <!-- If app has Focus -->
+                <DataTrigger Binding="{Binding IsFocused}" Value="True">
+                    <Setter TargetName="FocusBadge" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Standard DockAppItem Template -->
+        <DataTemplate x:Key="DockAppItemTemplate">
+            <Border Background="{DynamicResource PillBackgroundBrush}"
+                    BorderBrush="{DynamicResource BarBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="10,6"
+                    Margin="0,0,0,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <Border Width="26" Height="26" CornerRadius="5" Background="#10141D" Margin="0,0,10,0" VerticalAlignment="Center">
                             <Image Source="{Binding Icon}" Width="20" Height="20" Stretch="Uniform" />
@@ -720,7 +759,6 @@
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" MaxWidth="280" TextTrimming="CharacterEllipsis" />
-                                <!-- Focused Badge -->
                                 <Border Background="#2038BDF8" CornerRadius="4" Padding="5,1" Margin="6,0,0,0"
                                         Visibility="{Binding IsFocused, Converter={StaticResource BoolToVis}}">
                                     <TextBlock Text="Foco" FontSize="8.5" FontWeight="Bold" Foreground="{DynamicResource AccentCyanBrush}" />
@@ -730,9 +768,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Status Badges -->
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
-                        <!-- Pinned State Badge -->
                         <Border CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -760,7 +796,6 @@
                             </TextBlock>
                         </Border>
 
-                        <!-- Open/Running Badge -->
                         <Border CornerRadius="4" Padding="6,2"
                                 Visibility="{Binding IsOpen, Converter={StaticResource BoolToVis}}"
                                 Background="#1822C55E">
@@ -768,25 +803,21 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Reorder ◄ / ► Buttons -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
                         <Button Style="{StaticResource CardActionButtonStyle}"
                                 ToolTip="Mover aplicativo para a esquerda na Dock"
-                                Command="{Binding DataContext.MoveDockAppLeftCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"
+                                Command="{Binding MoveLeftCommand}"
                                 Padding="8,4" Margin="0,0,3,0">
                             <TextBlock Text="◄" FontSize="10" />
                         </Button>
                         <Button Style="{StaticResource CardActionButtonStyle}"
                                 ToolTip="Mover aplicativo para a direita na Dock"
-                                Command="{Binding DataContext.MoveDockAppRightCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"
+                                Command="{Binding MoveRightCommand}"
                                 Padding="8,4">
                             <TextBlock Text="►" FontSize="10" />
                         </Button>
                     </StackPanel>
 
-                    <!-- Pin / Unpin 1-Click Action -->
                     <Button Grid.Column="3"
                             Command="{Binding TogglePinCommand}"
                             Padding="10,4"
@@ -830,7 +861,6 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Window Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Width="18" Height="18" CornerRadius="9"
                             Background="{DynamicResource AccentColorBrush}"
@@ -842,7 +872,6 @@
                     <TextBlock Text="— Configurações &amp; Personalização" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
                 </StackPanel>
 
-                <!-- Window Control Buttons -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource CardActionButtonStyle}"
                             WindowChrome.IsHitTestVisibleInChrome="True"
@@ -862,14 +891,11 @@
             </Grid>
         </Border>
 
-        <!-- ================= MAIN LAYOUT (SIDEBAR + CONTENT) ================= -->
+        <!-- ================= MAIN LAYOUT ================= -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <!-- Left Sidebar: Width 220 -->
                 <ColumnDefinition Width="220" />
-                <!-- Subtle Vertical Divider -->
                 <ColumnDefinition Width="1" />
-                <!-- Content Area -->
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -879,11 +905,8 @@
                     Padding="12,12,12,12">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <!-- Quick Search Box -->
                         <RowDefinition Height="Auto" />
-                        <!-- Navigation Categories -->
                         <RowDefinition Height="*" />
-                        <!-- Sidebar Footer Status -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
@@ -902,7 +925,6 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Magnifying Glass Icon -->
                             <Path Grid.Column="0"
                                   Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
                                   Width="12" Height="12" Stretch="Uniform"
@@ -1054,7 +1076,7 @@
                                     Background="{DynamicResource AccentGreenBrush}"
                                     Margin="0,0,8,0" VerticalAlignment="Center" />
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="WinDock v5.0" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                <TextBlock Text="WinDock v6.0" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
                                 <TextBlock Text="Dark Glassmorphic Dock" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </StackPanel>
                         </StackPanel>
@@ -1068,7 +1090,6 @@
             <!-- ================= RIGHT CONTENT AREA ================= -->
             <Grid Grid.Column="2" Margin="18,14,18,16">
 
-                <!-- TAB CONTROL TIED TO SIDEBAR SELECTION -->
                 <TabControl SelectedIndex="{Binding SelectedIndex, ElementName=SidebarList}"
                             Background="Transparent"
                             BorderThickness="0">
@@ -1078,38 +1099,45 @@
                         </Style>
                     </TabControl.ItemContainerStyle>
 
-                    <!-- ================= TAB 0: WIDGETS DA DOCK ================= -->
+                    <!-- ================= TAB 0: WIDGETS DA DOCK (MINIMALIST 52PX ROWS) ================= -->
                     <TabItem>
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
-                                <Border Style="{StaticResource SettingsCardStyle}">
-                                    <StackPanel>
-                                        <TextBlock Text="Galeria de Widgets Modulares da Dock" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                        <TextBlock Text="Todos os itens na dock compartilham a mesma linha e hierarquia. Alterne os tamanhos entre 1x1 (40px), 1x2 (82px) e 1x3 (124px), ative/desative com o switch e visualize a prévia em tempo real no palco da Dock."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" />
-                                    </StackPanel>
+                                <Border Style="{StaticResource SettingsCardStyle}" Padding="12,10" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Widgets Modulares da Dock" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Text="Alterne tamanhos (1x1, 1x2, 1x3), ordene com ◄ / ► e visualize a prévia real e viva no mini-slot." FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="6 Widgets Ativos" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentCyanBrush}" VerticalAlignment="Center" />
+                                    </Grid>
                                 </Border>
 
                                 <ItemsControl ItemsSource="{Binding DockWidgets}"
-                                              ItemTemplate="{StaticResource LiveWidgetCardTemplate}" />
+                                              ItemTemplate="{StaticResource CompactWidgetRowTemplate}" />
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- ================= TAB 1: APPS & ORDEM DA DOCK ================= -->
+                    <!-- ================= TAB 1: APPS & ORDEM DA DOCK (UNIFIED MOTOR) ================= -->
                     <TabItem>
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
 
-                                <!-- SECTION 1: UNIFIED DOCK APPS QUEUE -->
+                                <!-- SECTION 1: UNIFIED DOCK STRIP ITEMS (ÍCONES + WIDGETS JUNTOS NA ORDEM REAL) -->
                                 <Border Style="{StaticResource SettingsCardStyle}">
                                     <StackPanel>
-                                        <TextBlock Text="Fila Unificada da Dock (Apps Abertos &amp; Atalhos Fixados)" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                        <TextBlock Text="Esta é a ordem real em que os ícones aparecem na barra da Dock. Use os botões ◄ e ► para reordenar qualquer aplicativo ao vivo, e fixe ou desafixe com 1 clique."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                        <TextBlock Text="Faixa Unificada da Barra da Dock (Ícones + Widgets Juntos)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                                        <TextBlock Text="Esta é a ordem real e completa da barra da Dock. Widgets e aplicativos dividem a mesma linha e podem ser livremente intercalados na ordem que você desejar."
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,10" />
 
-                                        <ItemsControl ItemsSource="{Binding DockApps}"
-                                                      ItemTemplate="{StaticResource DockAppItemTemplate}" />
+                                        <!-- Unified Strip Items (falls back to DockApps if DockStripItems is loading) -->
+                                        <ItemsControl ItemsSource="{Binding DockStripItems}"
+                                                      ItemTemplate="{StaticResource UnifiedDockStripItemTemplate}" />
                                     </StackPanel>
                                 </Border>
 
@@ -1118,7 +1146,7 @@
                                     <StackPanel>
                                         <TextBlock Text="Janelas Abertas no Momento (Fixar com 1 Clique)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
                                         <TextBlock Text="Clique no botão ao lado de qualquer janela aberta para fixá-la instantaneamente na Dock."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
 
                                         <ItemsControl ItemsSource="{Binding OpenAppsForPinning}">
                                             <ItemsControl.ItemTemplate>
@@ -1173,7 +1201,7 @@
                                     <StackPanel>
                                         <TextBlock Text="Atalhos Salvos nas Configurações da Dock" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
                                         <TextBlock Text="Gerencie, reordene ou remova atalhos salvos."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
 
                                         <ItemsControl ItemsSource="{Binding PinnedShortcuts}">
                                             <ItemsControl.ItemTemplate>
@@ -1231,7 +1259,7 @@
                                     <StackPanel>
                                         <TextBlock Text="Adicionar Atalho Manualmente" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
                                         <TextBlock Text="Selecione um arquivo executável (.exe) ou atalho (.lnk) para fixar na Dock com seu ícone real."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
 
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>
@@ -1286,7 +1314,7 @@
                                     <StackPanel>
                                         <TextBlock Text="Temas Pré-definidos" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
                                         <TextBlock Text="Selecione um estilo visual para aplicar instantaneamente na Dock e janelas."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
 
                                         <ItemsControl ItemsSource="{Binding AvailableThemes}">
                                             <ItemsControl.ItemTemplate>
@@ -1305,7 +1333,7 @@
 
                                                             <StackPanel Grid.Column="0">
                                                                 <TextBlock Text="{Binding Name}" FontWeight="Medium" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                                                <TextBlock Text="{Binding Description}" FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0" />
+                                                                <TextBlock Text="{Binding Description}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0" />
                                                             </StackPanel>
 
                                                             <Button Grid.Column="1"
@@ -1326,7 +1354,7 @@
                                     <StackPanel>
                                         <TextBlock Text="Cor de Destaque (Accent)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
                                         <TextBlock Text="Escolha o tom de destaque para os indicadores de foco, gauges e badges."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
 
                                         <ItemsControl ItemsSource="{Binding AvailableAccents}">
                                             <ItemsControl.ItemsPanel>
@@ -1363,10 +1391,10 @@
                                     <StackPanel>
                                         <TextBlock Text="Posicionamento &amp; Integração com Windows" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
                                         <TextBlock Text="Gerencie a posição da WinDock e o comportamento da barra nativa do sistema."
-                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" />
+                                                   FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
 
                                         <!-- Dock Edge Position -->
-                                        <Grid Margin="0,0,0,12">
+                                        <Grid Margin="0,0,0,10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
@@ -1390,7 +1418,7 @@
                                         </Grid>
 
                                         <!-- Native Taskbar Toggle -->
-                                        <Grid Margin="0,0,0,12">
+                                        <Grid Margin="0,0,0,10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
@@ -1411,7 +1439,7 @@
                                         </Grid>
 
                                         <!-- Desktop Widgets Toggle -->
-                                        <Grid Margin="0,0,0,12">
+                                        <Grid Margin="0,0,0,6">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
@@ -1444,36 +1472,32 @@
 
                                 <!-- GROUP 1: WIDGETS DA DOCK -->
                                 <StackPanel x:Name="WidgetsGroup">
-                                    <Border Style="{StaticResource SettingsCardStyle}">
-                                        <StackPanel>
-                                            <TextBlock Text="🧩 Widgets Modulares da Dock" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                            <TextBlock Text="Tamanho e visibilidade com prévia dinâmica na Dock."
-                                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
-                                        </StackPanel>
+                                    <Border Style="{StaticResource SettingsCardStyle}" Padding="12,10" Margin="0,0,0,8">
+                                        <TextBlock Text="🧩 Widgets Modulares da Dock (Prévia Minimalista)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
                                     </Border>
                                     <ItemsControl ItemsSource="{Binding DockWidgets}"
-                                                  ItemTemplate="{StaticResource LiveWidgetCardTemplate}" />
+                                                  ItemTemplate="{StaticResource CompactWidgetRowTemplate}" />
                                 </StackPanel>
 
-                                <!-- GROUP 2: APPS & ORDEM -->
-                                <StackPanel x:Name="AppsGroup" Margin="0,10,0,0">
+                                <!-- GROUP 2: FAIXA UNIFICADA & APPS -->
+                                <StackPanel x:Name="AppsGroup" Margin="0,8,0,0">
                                     <Border Style="{StaticResource SettingsCardStyle}">
                                         <StackPanel>
-                                            <TextBlock Text="🚀 Fila Unificada da Dock (Apps Abertos &amp; Atalhos Fixados)" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                            <TextBlock Text="Reordene com ◄ / ► e fixe ou desafixe qualquer app na barra."
-                                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
-                                            <ItemsControl ItemsSource="{Binding DockApps}"
-                                                          ItemTemplate="{StaticResource DockAppItemTemplate}" />
+                                            <TextBlock Text="🚀 Faixa Unificada da Barra da Dock (Ícones + Widgets)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                                            <TextBlock Text="Reordene com ◄ / ► qualquer item (widget ou app) misturado na barra."
+                                                       FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" />
+                                            <ItemsControl ItemsSource="{Binding DockStripItems}"
+                                                          ItemTemplate="{StaticResource UnifiedDockStripItemTemplate}" />
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
 
                                 <!-- GROUP 3: ATALHOS & JANELAS ABERTAS -->
-                                <StackPanel x:Name="ShortcutsGroup" Margin="0,10,0,0">
+                                <StackPanel x:Name="ShortcutsGroup" Margin="0,8,0,0">
                                     <Border Style="{StaticResource SettingsCardStyle}">
                                         <StackPanel>
                                             <TextBlock Text="📌 Janelas Abertas (Fixação Rápida)" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                            <TextBlock Text="Atalhos salvos e fixação com 1 clique." FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
+                                            <TextBlock Text="Atalhos salvos e fixação com 1 clique." FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" />
                                             <ItemsControl ItemsSource="{Binding OpenAppsForPinning}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
@@ -1508,11 +1532,11 @@
                                 </StackPanel>
 
                                 <!-- GROUP 4: TEMAS & CORES -->
-                                <StackPanel x:Name="ThemesGroup" Margin="0,10,0,0">
+                                <StackPanel x:Name="ThemesGroup" Margin="0,8,0,0">
                                     <Border Style="{StaticResource SettingsCardStyle}">
                                         <StackPanel>
                                             <TextBlock Text="🎨 Temas &amp; Cores de Destaque" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                            <TextBlock Text="Personalização visual da Dock." FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
+                                            <TextBlock Text="Personalização visual da Dock." FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" />
 
                                             <ItemsControl ItemsSource="{Binding AvailableAccents}">
                                                 <ItemsControl.ItemsPanel>
@@ -1540,13 +1564,13 @@
                                 </StackPanel>
 
                                 <!-- GROUP 5: COMPORTAMENTO & SISTEMA -->
-                                <StackPanel x:Name="BehaviorGroup" Margin="0,10,0,0">
+                                <StackPanel x:Name="BehaviorGroup" Margin="0,8,0,0">
                                     <Border Style="{StaticResource SettingsCardStyle}">
                                         <StackPanel>
                                             <TextBlock Text="⚙ Comportamento &amp; Posição" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                            <TextBlock Text="Posicionamento e integração nativa com o Windows." FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" />
+                                            <TextBlock Text="Posicionamento e integração nativa com o Windows." FontSize="10.5" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" />
 
-                                            <Grid Margin="0,0,0,8">
+                                            <Grid Margin="0,0,0,6">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
@@ -1557,7 +1581,7 @@
                                                 </Button>
                                             </Grid>
 
-                                            <Grid Margin="0,0,0,8">
+                                            <Grid Margin="0,0,0,6">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />

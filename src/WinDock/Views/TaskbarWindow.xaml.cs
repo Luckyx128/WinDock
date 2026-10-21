@@ -22,9 +22,9 @@ public partial class TaskbarWindow : Window
     private bool _isBarRegistered;
 
     private Point _dragStartPoint;
-    private DockAppItem? _draggedItem;
-    private Button? _draggedButton;
-    private bool _isDraggingDockApp;
+    private IDockOrderableItem? _draggedItem;
+    private FrameworkElement? _draggedElement;
+    private bool _isDraggingDockItem;
 
     public TaskbarWindow(
         MainViewModel viewModel,
@@ -42,7 +42,7 @@ public partial class TaskbarWindow : Window
         SourceInitialized += OnSourceInitialized;
         Loaded += OnLoaded;
         Closed += OnClosed;
-        Deactivated += (_, _) => ResetDockAppDrag();
+        Deactivated += (_, _) => ResetDockItemDrag();
 
         _viewModel.EdgeChanged += OnEdgeChanged;
         _viewModel.WidgetsVisibilityChanged += OnWidgetsVisibilityChanged;
@@ -156,27 +156,27 @@ public partial class TaskbarWindow : Window
         e.Handled = true;
     }
 
-    private void DockAppButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void DockItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (sender is Button button && button.DataContext is DockAppItem item)
+        if (sender is FrameworkElement element && element.DataContext is IDockOrderableItem item)
         {
             _dragStartPoint = e.GetPosition(this);
             _draggedItem = item;
-            _draggedButton = button;
-            _isDraggingDockApp = false;
+            _draggedElement = element;
+            _isDraggingDockItem = false;
         }
     }
 
-    private void DockAppButton_PreviewMouseMove(object sender, MouseEventArgs e)
+    private void DockItem_PreviewMouseMove(object sender, MouseEventArgs e)
     {
-        if (_draggedItem == null || _draggedButton == null)
+        if (_draggedItem == null || _draggedElement == null)
         {
             return;
         }
 
         if (e.LeftButton != MouseButtonState.Pressed)
         {
-            ResetDockAppDrag();
+            ResetDockItemDrag();
             return;
         }
 
@@ -184,37 +184,37 @@ public partial class TaskbarWindow : Window
         double diffX = Math.Abs(currentPoint.X - _dragStartPoint.X);
         double diffY = Math.Abs(currentPoint.Y - _dragStartPoint.Y);
 
-        if (!_isDraggingDockApp)
+        if (!_isDraggingDockItem)
         {
             if (diffX > SystemParameters.MinimumHorizontalDragDistance || diffY > SystemParameters.MinimumVerticalDragDistance)
             {
-                _isDraggingDockApp = true;
+                _isDraggingDockItem = true;
                 _draggedItem.IsDragging = true;
-                _draggedButton.CaptureMouse();
+                _draggedElement.CaptureMouse();
             }
         }
 
-        if (_isDraggingDockApp)
+        if (_isDraggingDockItem)
         {
-            // Hit-test DockAppsItemsControl to find if cursor is over another DockAppItem
-            if (DockAppsItemsControl != null)
+            // Hit-test UnifiedDockItemsControl to find if cursor is over another IDockOrderableItem (app or widget)
+            if (UnifiedDockItemsControl != null)
             {
-                Point ptInItems = e.GetPosition(DockAppsItemsControl);
-                HitTestResult hitResult = VisualTreeHelper.HitTest(DockAppsItemsControl, ptInItems);
+                Point ptInItems = e.GetPosition(UnifiedDockItemsControl);
+                HitTestResult hitResult = VisualTreeHelper.HitTest(UnifiedDockItemsControl, ptInItems);
                 if (hitResult?.VisualHit != null)
                 {
                     DependencyObject? current = hitResult.VisualHit;
-                    while (current != null && current != DockAppsItemsControl)
+                    while (current != null && current != UnifiedDockItemsControl)
                     {
-                        if (current is FrameworkElement fe && fe.DataContext is DockAppItem targetItem)
+                        if (current is FrameworkElement fe && fe.DataContext is IDockOrderableItem targetItem)
                         {
                             if (!ReferenceEquals(targetItem, _draggedItem))
                             {
-                                int fromIdx = _viewModel.DockApps.IndexOf(_draggedItem);
-                                int toIdx = _viewModel.DockApps.IndexOf(targetItem);
+                                int fromIdx = _viewModel.DockStripItems.IndexOf(_draggedItem);
+                                int toIdx = _viewModel.DockStripItems.IndexOf(targetItem);
                                 if (fromIdx >= 0 && toIdx >= 0 && fromIdx != toIdx)
                                 {
-                                    _viewModel.MoveDockApp(fromIdx, toIdx);
+                                    _viewModel.MoveDockItem(fromIdx, toIdx);
                                 }
                             }
                             break;
@@ -240,47 +240,53 @@ public partial class TaskbarWindow : Window
         }
     }
 
-    private void DockAppButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    private void DockItem_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (_isDraggingDockApp)
+        if (_isDraggingDockItem)
         {
-            // Drag operation finished: swallow event so Button.Click is NOT executed
+            // Drag operation finished: swallow event so click is not triggered
             e.Handled = true;
-            ResetDockAppDrag();
+            ResetDockItemDrag();
         }
         else
         {
-            ResetDockAppDrag();
+            ResetDockItemDrag();
         }
     }
 
     protected override void OnPreviewMouseLeftButtonUp(MouseButtonEventArgs e)
     {
-        if (_isDraggingDockApp)
+        if (_isDraggingDockItem)
         {
             e.Handled = true;
-            ResetDockAppDrag();
+            ResetDockItemDrag();
             return;
         }
         base.OnPreviewMouseLeftButtonUp(e);
     }
 
-    private void ResetDockAppDrag()
+    private void ResetDockItemDrag()
     {
         if (_draggedItem != null)
         {
             _draggedItem.IsDragging = false;
         }
 
-        if (_draggedButton != null && _draggedButton.IsMouseCaptured)
+        if (_draggedElement != null && _draggedElement.IsMouseCaptured)
         {
-            _draggedButton.ReleaseMouseCapture();
+            _draggedElement.ReleaseMouseCapture();
         }
 
         _draggedItem = null;
-        _draggedButton = null;
-        _isDraggingDockApp = false;
+        _draggedElement = null;
+        _isDraggingDockItem = false;
     }
+
+    // Backward-compatibility forwarders
+    private void DockAppButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DockItem_PreviewMouseLeftButtonDown(sender, e);
+    private void DockAppButton_PreviewMouseMove(object sender, MouseEventArgs e) => DockItem_PreviewMouseMove(sender, e);
+    private void DockAppButton_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => DockItem_PreviewMouseLeftButtonUp(sender, e);
+    private void ResetDockAppDrag() => ResetDockItemDrag();
 
     private void OnClosed(object? sender, EventArgs e)
     {
