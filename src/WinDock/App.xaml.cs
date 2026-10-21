@@ -29,6 +29,7 @@ public partial class App : System.Windows.Application
         var steamService = new SteamIntegrationService();
         var aiUsageService = new AiUsageService();
         var discordService = new DiscordStatusService();
+        var dockSettingsService = new DockSettingsService();
 
         // Ensure native taskbar is always restored if process exits unexpectedly
         AppDomain.CurrentDomain.ProcessExit += (_, _) => SafeRestoreTaskbar();
@@ -56,13 +57,18 @@ public partial class App : System.Windows.Application
             mediaService,
             steamService,
             aiUsageService,
-            discordService);
+            discordService,
+            dockSettingsService);
 
         // Listen for user opening customization settings
         _mainViewModel.OpenCustomizationRequested += OnOpenCustomizationRequested;
 
         _widgetsWindow = new DesktopWidgetsWindow(_mainViewModel, _appBarService);
-        _widgetsWindow.Show();
+        // Clean startup: desktop widgets window starts hidden if AreWidgetsVisible is false
+        if (_mainViewModel.AreWidgetsVisible)
+        {
+            _widgetsWindow.Show();
+        }
 
         _taskbarWindow = new TaskbarWindow(_mainViewModel, _appBarService, _widgetsWindow);
         _taskbarWindow.Show();

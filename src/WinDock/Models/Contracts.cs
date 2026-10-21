@@ -65,6 +65,7 @@ public sealed class AppWindowInfo
     public IntPtr Handle { get; init; }
     public string Title { get; init; } = string.Empty;
     public string ProcessName { get; init; } = string.Empty;
+    public string ExecutablePath { get; init; } = string.Empty;
     public ImageSource? Icon { get; init; }
     public bool IsFocused { get; init; }
     public bool IsMinimized { get; init; }

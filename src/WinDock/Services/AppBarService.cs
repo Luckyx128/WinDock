@@ -16,9 +16,11 @@ public sealed class AppBarService : IAppBarService
         public required Window Window { get; init; }
         public required uint CallbackMessageId { get; init; }
         public HwndSourceHook? Hook { get; set; }
+        public DependencyPropertyChangedEventHandler? VisibilityChangedHandler { get; set; }
         public double HeightDip { get; set; }
         public BarEdge Edge { get; set; }
         public bool IsUpdating { get; set; }
+        public bool IsFullscreenActive { get; set; }
     }
 
     private readonly Dictionary<IntPtr, AppBarRegistration> _registeredBars = new();
@@ -61,6 +63,42 @@ public sealed class AppBarService : IAppBarService
                 Edge = edge
             };
 
+            DependencyPropertyChangedEventHandler onVisibilityChanged = (_, _) =>
+            {
+                if (!_registeredBars.TryGetValue(hwnd, out var reg))
+                {
+                    return;
+                }
+
+                if (window.IsVisible && window.Visibility == Visibility.Visible && !reg.IsFullscreenActive)
+                {
+                    UpdateBarPosition(window, reg.HeightDip, reg.Edge);
+                }
+                else
+                {
+                    // Cleanly clear work area reservation so hidden dock never blocks fullscreen or maximized apps
+                    uint uEdge = reg.Edge == BarEdge.Bottom ? Win32Interop.ABE_BOTTOM : Win32Interop.ABE_TOP;
+                    var abdHidden = new Win32Interop.APPBARDATA
+                    {
+                        cbSize = Marshal.SizeOf<Win32Interop.APPBARDATA>(),
+                        hWnd = hwnd,
+                        uEdge = uEdge,
+                        rc = new Win32Interop.RECT { left = 0, top = 0, right = 0, bottom = 0 }
+                    };
+                    Win32Interop.SHAppBarMessage(Win32Interop.ABM_SETPOS, ref abdHidden);
+
+                    Win32Interop.SetWindowPos(
+                        hwnd,
+                        Win32Interop.HWND_NOTOPMOST,
+                        0, 0, 0, 0,
+                        Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE | Win32Interop.SWP_HIDEWINDOW);
+                    Win32Interop.ShowWindow(hwnd, Win32Interop.SW_HIDE);
+                }
+            };
+
+            registration.VisibilityChangedHandler = onVisibilityChanged;
+            window.IsVisibleChanged += onVisibilityChanged;
+
             var source = HwndSource.FromHwnd(hwnd);
             if (source != null)
             {
@@ -71,7 +109,7 @@ public sealed class AppBarService : IAppBarService
                         switch (wParam.ToInt32())
                         {
                             case Win32Interop.ABN_POSCHANGED:
-                                if (!registration.IsUpdating)
+                                if (!registration.IsUpdating && !registration.IsFullscreenActive && registration.Window.IsVisible)
                                 {
                                     UpdateBarPosition(registration.Window, registration.HeightDip, registration.Edge);
                                 }
@@ -98,7 +136,11 @@ public sealed class AppBarService : IAppBarService
             registration.Edge = edge;
         }
 
-        UpdateBarPosition(window, heightDip, edge);
+        // Only position and reserve workarea if the window is currently visible and not in fullscreen
+        if (window.IsVisible && window.Visibility == Visibility.Visible && !registration.IsFullscreenActive)
+        {
+            UpdateBarPosition(window, heightDip, edge);
+        }
     }
 
     public void UpdateBarPosition(Window window, double heightDip, BarEdge edge = BarEdge.Bottom)
@@ -125,6 +167,29 @@ public sealed class AppBarService : IAppBarService
 
         try
         {
+            uint uEdge = edge == BarEdge.Bottom ? Win32Interop.ABE_BOTTOM : Win32Interop.ABE_TOP;
+
+            // If the window is hidden or in fullscreen, do NOT reserve space with ABM_SETPOS and do NOT show window!
+            if (!window.IsVisible || window.Visibility != Visibility.Visible || (registration?.IsFullscreenActive == true))
+            {
+                var abdHidden = new Win32Interop.APPBARDATA
+                {
+                    cbSize = Marshal.SizeOf<Win32Interop.APPBARDATA>(),
+                    hWnd = hwnd,
+                    uEdge = uEdge,
+                    rc = new Win32Interop.RECT { left = 0, top = 0, right = 0, bottom = 0 }
+                };
+                Win32Interop.SHAppBarMessage(Win32Interop.ABM_SETPOS, ref abdHidden);
+
+                Win32Interop.SetWindowPos(
+                    hwnd,
+                    Win32Interop.HWND_NOTOPMOST,
+                    0, 0, 0, 0,
+                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE | Win32Interop.SWP_HIDEWINDOW);
+                Win32Interop.ShowWindow(hwnd, Win32Interop.SW_HIDE);
+                return;
+            }
+
             DpiScale dpi = VisualTreeHelper.GetDpi(window);
             double scaleX = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
             double scaleY = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
@@ -132,8 +197,6 @@ public sealed class AppBarService : IAppBarService
             int screenWidthPx = Win32Interop.GetSystemMetrics(Win32Interop.SM_CXSCREEN);
             int screenHeightPx = Win32Interop.GetSystemMetrics(Win32Interop.SM_CYSCREEN);
             int barHeightPx = Math.Max(1, (int)Math.Round(heightDip * scaleY));
-
-            uint uEdge = edge == BarEdge.Bottom ? Win32Interop.ABE_BOTTOM : Win32Interop.ABE_TOP;
 
             var abd = new Win32Interop.APPBARDATA
             {
@@ -217,6 +280,11 @@ public sealed class AppBarService : IAppBarService
 
         if (_registeredBars.Remove(hwnd, out var registration))
         {
+            if (registration.VisibilityChangedHandler != null)
+            {
+                registration.Window.IsVisibleChanged -= registration.VisibilityChangedHandler;
+            }
+
             if (registration.Hook != null)
             {
                 var source = HwndSource.FromHwnd(hwnd);
@@ -259,7 +327,7 @@ public sealed class AppBarService : IAppBarService
             Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
     }
 
-    private static void HandleFullscreenApp(Window window, bool isFullscreen)
+    private void HandleFullscreenApp(Window window, bool isFullscreen)
     {
         try
         {
@@ -270,29 +338,56 @@ public sealed class AppBarService : IAppBarService
                 return;
             }
 
+            if (_registeredBars.TryGetValue(hwnd, out var registration))
+            {
+                registration.IsFullscreenActive = isFullscreen;
+            }
+
             if (isFullscreen)
             {
-                // Fullscreen app (game, media player) opened: lower dock behind it
+                // Fullscreen app (game, browser video) opened:
+                // 1. Drop topmost status and hide window cleanly
+                Win32Interop.SetWindowPos(
+                    hwnd,
+                    Win32Interop.HWND_NOTOPMOST,
+                    0, 0, 0, 0,
+                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+
                 Win32Interop.SetWindowPos(
                     hwnd,
                     Win32Interop.HWND_BOTTOM,
-                    0,
-                    0,
-                    0,
-                    0,
-                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+                    0, 0, 0, 0,
+                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE | Win32Interop.SWP_HIDEWINDOW);
+
+                Win32Interop.ShowWindow(hwnd, Win32Interop.SW_HIDE);
+
+                // 2. Clear workarea reservation with ABM_SETPOS so fullscreen app can cover full screen
+                uint uEdge = registration?.Edge == BarEdge.Bottom ? Win32Interop.ABE_BOTTOM : Win32Interop.ABE_TOP;
+                var abdHidden = new Win32Interop.APPBARDATA
+                {
+                    cbSize = Marshal.SizeOf<Win32Interop.APPBARDATA>(),
+                    hWnd = hwnd,
+                    uEdge = uEdge,
+                    rc = new Win32Interop.RECT { left = 0, top = 0, right = 0, bottom = 0 }
+                };
+                Win32Interop.SHAppBarMessage(Win32Interop.ABM_SETPOS, ref abdHidden);
+
+                window.Dispatcher.InvokeAsync(() =>
+                {
+                    window.Visibility = Visibility.Hidden;
+                });
             }
             else
             {
-                // Fullscreen app closed: restore topmost dock position
-                Win32Interop.SetWindowPos(
-                    hwnd,
-                    Win32Interop.HWND_TOPMOST,
-                    0,
-                    0,
-                    0,
-                    0,
-                    Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+                // Fullscreen app closed: restore dock visibility and position
+                window.Dispatcher.InvokeAsync(() =>
+                {
+                    window.Visibility = Visibility.Visible;
+                    if (registration != null)
+                    {
+                        UpdateBarPosition(window, registration.HeightDip, registration.Edge);
+                    }
+                });
             }
         }
         catch

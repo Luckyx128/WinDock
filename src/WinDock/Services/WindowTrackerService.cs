@@ -18,15 +18,12 @@ public sealed class WindowTrackerService : IWindowTrackerService
     private sealed class CachedWindowMetadata
     {
         public required string ProcessName { get; init; }
+        public string ExecutablePath { get; init; } = string.Empty;
         public ImageSource? Icon { get; init; }
     }
 
     [DllImport("user32.dll")]
     private static extern bool BringWindowToTop(IntPtr hWnd);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetWindowRect(IntPtr hWnd, out Win32Interop.RECT lpRect);
 
     private static readonly HashSet<string> ExcludedClassNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -34,7 +31,8 @@ public sealed class WindowTrackerService : IWindowTrackerService
         "WorkerW",
         Win32Interop.ShellTrayWndClassName,
         Win32Interop.ShellSecondaryTrayWndClassName,
-        "Windows.UI.Core.CoreWindow"
+        "Windows.UI.Core.CoreWindow",
+        "Shell_LightDismissOverlay"
     };
 
     private readonly Dictionary<IntPtr, CachedWindowMetadata> _metadataCache = new();
@@ -101,6 +99,7 @@ public sealed class WindowTrackerService : IWindowTrackerService
                 Handle = hWnd,
                 Title = title,
                 ProcessName = metadata.ProcessName,
+                ExecutablePath = metadata.ExecutablePath,
                 Icon = metadata.Icon,
                 IsFocused = hWnd == foregroundHwnd,
                 IsMinimized = Win32Interop.IsIconic(hWnd)
@@ -142,8 +141,31 @@ public sealed class WindowTrackerService : IWindowTrackerService
 
     public bool IsForegroundWindowFullscreen()
     {
+        return IsForegroundWindowFullscreen(IntPtr.Zero);
+    }
+
+    public bool IsForegroundWindowFullscreen(IntPtr excludeWindowHandle)
+    {
         IntPtr fg = Win32Interop.GetForegroundWindow();
         if (fg == IntPtr.Zero || !Win32Interop.IsWindow(fg))
+        {
+            return false;
+        }
+
+        if (excludeWindowHandle != IntPtr.Zero && fg == excludeWindowHandle)
+        {
+            return false;
+        }
+
+        Win32Interop.GetWindowThreadProcessId(fg, out uint fgPid);
+        if (fgPid == _currentProcessId)
+        {
+            return false;
+        }
+
+        IntPtr shell = Win32Interop.GetShellWindow();
+        IntPtr desktop = Win32Interop.GetDesktopWindow();
+        if (fg == shell || fg == desktop)
         {
             return false;
         }
@@ -154,20 +176,78 @@ public sealed class WindowTrackerService : IWindowTrackerService
             return false;
         }
 
-        if (IsWindowCloaked(fg) || Win32Interop.IsIconic(fg))
+        if (IsWindowCloaked(fg) || Win32Interop.IsIconic(fg) || !Win32Interop.IsWindowVisible(fg))
         {
             return false;
         }
 
-        if (GetWindowRect(fg, out var rect))
+        if (Win32Interop.GetWindowRect(fg, out var rect))
         {
             int screenWidth = Win32Interop.GetSystemMetrics(Win32Interop.SM_CXSCREEN);
             int screenHeight = Win32Interop.GetSystemMetrics(Win32Interop.SM_CYSCREEN);
 
-            return rect.left <= 0 && rect.top <= 0 && rect.right >= screenWidth && rect.bottom >= screenHeight;
+            int width = rect.right - rect.left;
+            int height = rect.bottom - rect.top;
+
+            if (width >= screenWidth &&
+                height >= screenHeight &&
+                rect.left <= 0 &&
+                rect.top <= 0 &&
+                rect.right >= screenWidth &&
+                rect.bottom >= screenHeight)
+            {
+                return true;
+            }
         }
 
         return false;
+    }
+
+    public ImageSource? ExtractIconForPath(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            string cleanPath = Environment.ExpandEnvironmentVariables(filePath.Trim().Trim('\"'));
+            if (!File.Exists(cleanPath))
+            {
+                int exeIdx = cleanPath.IndexOf(".exe", StringComparison.OrdinalIgnoreCase);
+                if (exeIdx > 0)
+                {
+                    string candidate = cleanPath.Substring(0, exeIdx + 4);
+                    if (File.Exists(candidate))
+                    {
+                        cleanPath = candidate;
+                    }
+                }
+            }
+
+            if (!File.Exists(cleanPath))
+            {
+                return null;
+            }
+
+            using var associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(cleanPath);
+            if (associatedIcon != null)
+            {
+                var bitmap = Imaging.CreateBitmapSourceFromHIcon(
+                    associatedIcon.Handle,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+                bitmap.Freeze();
+                return bitmap;
+            }
+        }
+        catch
+        {
+            // Ignore extraction errors
+        }
+
+        return null;
     }
 
     private static bool IsWindowCloaked(IntPtr hWnd)
@@ -214,6 +294,7 @@ public sealed class WindowTrackerService : IWindowTrackerService
         var metadata = new CachedWindowMetadata
         {
             ProcessName = processName,
+            ExecutablePath = exePath ?? string.Empty,
             Icon = icon
         };
 
@@ -270,7 +351,7 @@ public sealed class WindowTrackerService : IWindowTrackerService
         return exePath;
     }
 
-    private static ImageSource? TryExtractWindowIcon(IntPtr hWnd, string? exePath)
+    private ImageSource? TryExtractWindowIcon(IntPtr hWnd, string? exePath)
     {
         try
         {
@@ -290,25 +371,9 @@ public sealed class WindowTrackerService : IWindowTrackerService
             // Fall through to executable icon extraction
         }
 
-        if (!string.IsNullOrWhiteSpace(exePath) && File.Exists(exePath))
+        if (!string.IsNullOrWhiteSpace(exePath))
         {
-            try
-            {
-                using System.Drawing.Icon? associatedIcon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
-                if (associatedIcon != null)
-                {
-                    var bitmap = Imaging.CreateBitmapSourceFromHIcon(
-                        associatedIcon.Handle,
-                        Int32Rect.Empty,
-                        BitmapSizeOptions.FromEmptyOptions());
-                    bitmap.Freeze();
-                    return bitmap;
-                }
-            }
-            catch
-            {
-                // Ignore icon extraction errors
-            }
+            return ExtractIconForPath(exePath);
         }
 
         return null;

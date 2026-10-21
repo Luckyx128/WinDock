@@ -1,3 +1,4 @@
+global using System.Windows.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -6,12 +7,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using WinDock.Interop;
 using WinDock.Models;
+using WinDock.Services;
 using Color = System.Windows.Media.Color;
 using ColorConverter = System.Windows.Media.ColorConverter;
 using Application = System.Windows.Application;
@@ -184,6 +189,220 @@ public sealed class PinnedShortcutItem : INotifyPropertyChanged
     }
 }
 
+/// <summary>
+/// Unified 1x1 Dock App Item combining user-pinned apps and open windows into one item.
+/// </summary>
+public sealed class DockAppItem : INotifyPropertyChanged
+{
+    private string _title = string.Empty;
+    private string? _executablePath;
+    private string _processName = string.Empty;
+    private IntPtr _windowHandle = IntPtr.Zero;
+    private bool _isOpen;
+    private bool _isFocused;
+    private bool _isMinimized;
+    private bool _isPinned;
+    private string? _shortcutId;
+    private ImageSource? _icon;
+
+    public string Title
+    {
+        get => _title;
+        set
+        {
+            if (_title != value)
+            {
+                _title = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string? ExecutablePath
+    {
+        get => _executablePath;
+        set
+        {
+            if (_executablePath != value)
+            {
+                _executablePath = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string ProcessName
+    {
+        get => _processName;
+        set
+        {
+            if (_processName != value)
+            {
+                _processName = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public IntPtr WindowHandle
+    {
+        get => _windowHandle;
+        set
+        {
+            if (_windowHandle != value)
+            {
+                _windowHandle = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsOpen
+    {
+        get => _isOpen;
+        set
+        {
+            if (_isOpen != value)
+            {
+                _isOpen = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsFocused
+    {
+        get => _isFocused;
+        set
+        {
+            if (_isFocused != value)
+            {
+                _isFocused = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsMinimized
+    {
+        get => _isMinimized;
+        set
+        {
+            if (_isMinimized != value)
+            {
+                _isMinimized = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set
+        {
+            if (_isPinned != value)
+            {
+                _isPinned = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(PinMenuText));
+            }
+        }
+    }
+
+    public string? ShortcutId
+    {
+        get => _shortcutId;
+        set
+        {
+            if (_shortcutId != value)
+            {
+                _shortcutId = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public ImageSource? Icon
+    {
+        get => _icon;
+        set
+        {
+            if (_icon != value)
+            {
+                _icon = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasIcon));
+            }
+        }
+    }
+
+    public bool HasIcon => Icon != null;
+
+    public string PinMenuText => IsPinned ? "Desafixar da Dock" : "Fixar na Dock";
+
+    public ICommand ClickCommand { get; }
+    public ICommand TogglePinCommand { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public DockAppItem(Action<DockAppItem> onClick, Action<DockAppItem> onTogglePin)
+    {
+        ClickCommand = new RelayCommand(() => onClick(this));
+        TogglePinCommand = new RelayCommand(() => onTogglePin(this));
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+    }
+}
+
+/// <summary>
+/// Helper item for 1-click pinning of currently open applications in CustomizationWindow.
+/// </summary>
+public sealed class OpenAppPinItem : INotifyPropertyChanged
+{
+    private bool _isPinned;
+
+    public required AppWindowInfo WindowInfo { get; init; }
+    public required string? ExecutablePath { get; init; }
+
+    public string Title => WindowInfo.Title;
+    public string ProcessName => WindowInfo.ProcessName;
+    public ImageSource? Icon => WindowInfo.Icon;
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set
+        {
+            if (_isPinned != value)
+            {
+                _isPinned = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ButtonText));
+            }
+        }
+    }
+
+    public string ButtonText => IsPinned ? "✓ Fixado (Desafixar)" : "+ Fixar na Dock";
+
+    public ICommand TogglePinCommand { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public OpenAppPinItem(Action<OpenAppPinItem> onTogglePin)
+    {
+        TogglePinCommand = new RelayCommand(() => onTogglePin(this));
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+    }
+}
+
 public sealed class ThemePreset
 {
     public required string Id { get; init; }
@@ -209,6 +428,9 @@ public sealed class AccentColorOption
 
 public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 {
+    private static readonly Dictionary<string, ImageSource?> IconCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<IntPtr, string?> ExePathCache = new();
+
     private readonly IAppBarService _appBarService;
     private readonly INativeTaskbarService _nativeTaskbarService;
     private readonly IWindowTrackerService _windowTrackerService;
@@ -217,6 +439,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly ISteamIntegrationService _steamIntegrationService;
     private readonly IAiUsageService _aiUsageService;
     private readonly IDiscordStatusService _discordStatusService;
+    private readonly IDockSettingsService _dockSettingsService;
 
     private readonly DispatcherTimer _fastTimer;
     private readonly DispatcherTimer _telemetryTimer;
@@ -225,7 +448,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private IntPtr _excludeWindowHandle;
     private BarEdge _currentEdge = BarEdge.Bottom;
-    private bool _areWidgetsVisible = true;
+    private bool _areWidgetsVisible = false; // Default clean: widgets OFF on startup
+    private bool _isFullscreenActive = false;
 
     private string _currentTimeText = DateTime.Now.ToString("HH:mm");
     private string _currentSecondsText = DateTime.Now.ToString("ss");
@@ -245,9 +469,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler? EdgeChanged;
     public event EventHandler? WidgetsVisibilityChanged;
+    public event EventHandler<bool>? FullscreenStateChanged;
     public event Action? OpenCustomizationRequested;
 
+    /// <summary>
+    /// Unified Dock collection containing both open apps and user-pinned apps as 1x1 (40x40) items.
+    /// </summary>
+    public ObservableCollection<DockAppItem> DockApps { get; } = new();
+
+    /// <summary>
+    /// Open windows list (also bound in CustomizationWindow for 1-click pinning).
+    /// </summary>
     public ObservableCollection<AppWindowInfo> OpenWindows { get; } = new();
+
+    /// <summary>
+    /// Items exposed for 1-click pinning in CustomizationWindow.
+    /// </summary>
+    public ObservableCollection<OpenAppPinItem> OpenAppsForPinning { get; } = new();
+
     public ObservableCollection<PinnedShortcutItem> PinnedShortcuts { get; } = new();
     public ObservableCollection<DockWidgetItem> DockWidgets { get; } = new();
     public ObservableCollection<ThemePreset> AvailableThemes { get; } = new();
@@ -256,6 +495,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ObservableCollection<AiProviderUsage> AiProviders { get; } = new();
 
     public ICommand WindowClickCommand { get; }
+    public ICommand DockAppClickCommand { get; }
+    public ICommand TogglePinAppCommand { get; }
+    public ICommand PinOpenWindowCommand { get; }
+
     public ICommand PlayPauseCommand { get; }
     public ICommand NextTrackCommand { get; }
     public ICommand PreviousTrackCommand { get; }
@@ -288,7 +531,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         IMediaIntegrationService mediaIntegrationService,
         ISteamIntegrationService steamIntegrationService,
         IAiUsageService aiUsageService,
-        IDiscordStatusService discordStatusService)
+        IDiscordStatusService discordStatusService,
+        IDockSettingsService? dockSettingsService = null)
     {
         _appBarService = appBarService;
         _nativeTaskbarService = nativeTaskbarService;
@@ -298,9 +542,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _steamIntegrationService = steamIntegrationService;
         _aiUsageService = aiUsageService;
         _discordStatusService = discordStatusService;
+        _dockSettingsService = dockSettingsService ?? new DockSettingsService();
 
         // Base Commands
         WindowClickCommand = new RelayCommand(ExecuteWindowClick);
+        DockAppClickCommand = new RelayCommand(param =>
+        {
+            if (param is DockAppItem item) ExecuteDockAppClick(item);
+        });
+        TogglePinAppCommand = new RelayCommand(param =>
+        {
+            if (param is DockAppItem item) TogglePinApp(item);
+        });
+        PinOpenWindowCommand = new RelayCommand(param =>
+        {
+            if (param is AppWindowInfo win) PinOpenWindow(win);
+            else if (param is OpenAppPinItem pinItem) TogglePinOpenAppItem(pinItem);
+        });
+
         PlayPauseCommand = new RelayCommand(ExecutePlayPause);
         NextTrackCommand = new RelayCommand(ExecuteNextTrack);
         PreviousTrackCommand = new RelayCommand(ExecutePreviousTrack);
@@ -331,14 +590,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _currentTheme = AvailableThemes[0];
         _currentAccent = AvailableAccents[0];
 
-        // Initialize Pinned Shortcuts & Modular Dock Widgets
-        InitializePinnedShortcuts();
+        // Clean Dock initialization: no fake emoji shortcuts & all dock widgets IsVisible = false by default!
+        InitializeCleanPinnedShortcuts();
         InitializeDockWidgets();
 
-        // Start Fast & Telemetry Timers
+        // Start Fast Timer: exactly 500ms for responsive fullscreen auto-hide and dock app updates
         _fastTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(800)
+            Interval = TimeSpan.FromMilliseconds(500)
         };
         _fastTimer.Tick += (_, _) => RefreshFastState();
         _fastTimer.Start();
@@ -429,60 +688,69 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         });
     }
 
-    private void InitializePinnedShortcuts()
+    /// <summary>
+    /// Requirement (1): Remove all fake pre-populated emoji shortcuts (Explorer, Google, PowerShell, etc.).
+    /// Starts 100% clean with only real user-pinned apps saved in settings.
+    /// </summary>
+    private void InitializeCleanPinnedShortcuts()
     {
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
-        {
-            Name = "Explorador de Arquivos",
-            TargetPath = "explorer.exe",
-            IconGlyph = "📁"
-        });
+        PinnedShortcuts.Clear();
 
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
-        {
-            Name = "Navegador de Internet",
-            TargetPath = "https://www.google.com",
-            IconGlyph = "🌐"
-        });
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        string settingsFile = Path.Combine(appData, "WinDock", "dock_settings.json");
 
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+        // If dock_settings.json didn't exist yet, clear any pre-populated defaults so dock starts 100% clean
+        if (!File.Exists(settingsFile))
         {
-            Name = "Terminal / PowerShell",
-            TargetPath = "powershell.exe",
-            IconGlyph = "💻"
-        });
+            _dockSettingsService.CurrentSettings.PinnedShortcuts.Clear();
+            _dockSettingsService.SaveSettings();
+        }
+        else
+        {
+            // Clean out any obsolete emoji placeholders if present in existing json
+            _dockSettingsService.CurrentSettings.PinnedShortcuts.RemoveAll(s =>
+                s.TargetPath.Equals("discord", StringComparison.OrdinalIgnoreCase) ||
+                s.TargetPath.Equals("steam", StringComparison.OrdinalIgnoreCase) ||
+                s.TargetPath.Contains("google.com", StringComparison.OrdinalIgnoreCase) ||
+                s.TargetPath.Equals("powershell.exe", StringComparison.OrdinalIgnoreCase) ||
+                s.TargetPath.Equals("notepad.exe", StringComparison.OrdinalIgnoreCase));
+            _dockSettingsService.SaveSettings();
+        }
 
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
-        {
-            Name = "Discord",
-            TargetPath = "discord",
-            IconGlyph = "💬"
-        });
-
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
-        {
-            Name = "Steam",
-            TargetPath = "steam",
-            IconGlyph = "🎮"
-        });
-
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
-        {
-            Name = "Bloco de Notas",
-            TargetPath = "notepad.exe",
-            IconGlyph = "📝"
-        });
+        SyncPinnedShortcutsFromSettings();
     }
 
+    private void SyncPinnedShortcutsFromSettings()
+    {
+        PinnedShortcuts.Clear();
+        foreach (var shortcut in _dockSettingsService.CurrentSettings.PinnedShortcuts)
+        {
+            var icon = ExtractIconForPath(shortcut.TargetPath);
+            PinnedShortcuts.Add(new PinnedShortcutItem(LaunchPinnedShortcut)
+            {
+                Id = shortcut.Id,
+                Name = shortcut.Title,
+                TargetPath = shortcut.TargetPath,
+                Arguments = shortcut.Arguments,
+                CustomIcon = icon
+            });
+        }
+    }
+
+    /// <summary>
+    /// Requirement (1): Set all DockWidgets IsVisible=false by default so the dock starts 100% clean.
+    /// </summary>
     private void InitializeDockWidgets()
     {
+        DockWidgets.Clear();
+
         DockWidgets.Add(new DockWidgetItem
         {
             Id = "hardware",
             Title = "Monitor de Hardware",
             IconGlyph = "⚡",
             Description = "Gauges de CPU, GPU e memória RAM em tempo real",
-            IsVisible = true,
+            IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
 
@@ -492,7 +760,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Mídia & YouTube",
             IconGlyph = "▶",
             Description = "Player com reprodução ativa, YouTube e controles de faixa",
-            IsVisible = true,
+            IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
 
@@ -502,7 +770,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Steam Game Status",
             IconGlyph = "🎮",
             Description = "Status da Steam e launcher rápido de jogos",
-            IsVisible = true,
+            IsVisible = false,
             Size = DockWidgetSize.Size1x1
         });
 
@@ -512,7 +780,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Discord Presence",
             IconGlyph = "💬",
             Description = "Presença do Discord e atividade em execução",
-            IsVisible = true,
+            IsVisible = false,
             Size = DockWidgetSize.Size1x1
         });
 
@@ -522,7 +790,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Resumo IA",
             IconGlyph = "✨",
             Description = "Contador de requisições de IA e modelos ativos",
-            IsVisible = true,
+            IsVisible = false,
             Size = DockWidgetSize.Size1x1
         });
 
@@ -532,7 +800,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Title = "Relógio & Calendário",
             IconGlyph = "🕒",
             Description = "Horário preciso, data e dia da semana",
-            IsVisible = true,
+            IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
     }
@@ -546,7 +814,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             {
                 _excludeWindowHandle = value;
                 OnPropertyChanged();
-                RefreshOpenWindows();
+                RefreshOpenWindowsAndDockApps();
             }
         }
     }
@@ -570,6 +838,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public bool IsAtBottom => CurrentEdge == BarEdge.Bottom;
     public string EdgeLabel => CurrentEdge == BarEdge.Top ? "Topo" : "Base";
 
+    /// <summary>
+    /// Requirement (1): AreWidgetsVisible = false by default on startup.
+    /// </summary>
     public bool AreWidgetsVisible
     {
         get => _areWidgetsVisible;
@@ -581,6 +852,23 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(WidgetsToggleText));
                 WidgetsVisibilityChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Requirement (3): Active fullscreen detection state.
+    /// </summary>
+    public bool IsFullscreenActive
+    {
+        get => _isFullscreenActive;
+        private set
+        {
+            if (_isFullscreenActive != value)
+            {
+                _isFullscreenActive = value;
+                OnPropertyChanged();
+                FullscreenStateChanged?.Invoke(this, value);
             }
         }
     }
@@ -815,6 +1103,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    /// <summary>
+    /// Executes every 500ms:
+    /// (1) Checks fullscreen state (excluding WinDock itself)
+    /// (2) Updates time and date
+    /// (3) Synchronizes OpenWindows and unified DockApps
+    /// </summary>
     private void RefreshFastState()
     {
         if (_isDisposed)
@@ -828,26 +1122,244 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         CurrentDateText = now.ToString("ddd, dd MMM");
         GreetingText = GetGreeting();
 
-        RefreshOpenWindows();
-        UpdatePinnedShortcutsRunningState();
+        // Requirement (3): Fullscreen auto-hide check
+        CheckFullscreenState();
+
+        // Requirement (2): Refresh Open Windows & Unified DockApps
+        RefreshOpenWindowsAndDockApps();
     }
 
-    public void RefreshOpenWindows()
+    /// <summary>
+    /// Requirement (3): In fast timer (every 500ms), check if foreground window is fullscreen.
+    /// Exclude WinDock handle so the dock itself is not considered fullscreen.
+    /// </summary>
+    private void CheckFullscreenState()
+    {
+        bool isFullscreen = false;
+        try
+        {
+            isFullscreen = _windowTrackerService.IsForegroundWindowFullscreen(_excludeWindowHandle);
+        }
+        catch
+        {
+            isFullscreen = false;
+        }
+
+        IsFullscreenActive = isFullscreen;
+    }
+
+    /// <summary>
+    /// Requirement (2): UNIFIED DOCK APPS.
+    /// Combines user-pinned apps and open windows into one unified collection of 1x1 (40x40) items.
+    /// If a pinned app is open, merges it into its pinned position with its real icon and active focus indicator.
+    /// </summary>
+    public void RefreshOpenWindowsAndDockApps()
     {
         if (_isDisposed)
         {
             return;
         }
 
+        IReadOnlyList<AppWindowInfo> windows;
         try
         {
-            var windows = _windowTrackerService.GetOpenWindows(_excludeWindowHandle);
-            SyncOpenWindows(windows);
+            windows = _windowTrackerService.GetOpenWindows(_excludeWindowHandle);
         }
         catch
         {
-            // Keep existing window list if enumeration transiently fails
+            return;
         }
+
+        SyncOpenWindows(windows);
+
+        // Build unified target items list
+        var pinnedShortcuts = _dockSettingsService.CurrentSettings.PinnedShortcuts;
+        var targetItems = new List<DockAppItem>();
+        var matchedWindowHandles = new HashSet<IntPtr>();
+
+        // 1. Process all pinned shortcuts in order
+        foreach (var pinned in pinnedShortcuts)
+        {
+            string? pinnedExe = pinned.TargetPath;
+            string cleanPinnedName = Path.GetFileNameWithoutExtension(pinnedExe);
+
+            // Check if any open window corresponds to this pinned app
+            AppWindowInfo? matchedWindow = null;
+            foreach (var win in windows)
+            {
+                if (matchedWindowHandles.Contains(win.Handle))
+                {
+                    continue;
+                }
+
+                if (IsWindowMatchForShortcut(win, pinned))
+                {
+                    matchedWindow = win;
+                    break;
+                }
+            }
+
+            if (matchedWindow != null)
+            {
+                matchedWindowHandles.Add(matchedWindow.Handle);
+
+                var icon = matchedWindow.Icon ?? ExtractIconForPath(pinnedExe);
+                var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp)
+                {
+                    Title = !string.IsNullOrWhiteSpace(pinned.Title) ? pinned.Title : matchedWindow.Title,
+                    ExecutablePath = pinnedExe,
+                    ProcessName = matchedWindow.ProcessName,
+                    WindowHandle = matchedWindow.Handle,
+                    IsOpen = true,
+                    IsFocused = matchedWindow.IsFocused,
+                    IsMinimized = matchedWindow.IsMinimized,
+                    IsPinned = true,
+                    ShortcutId = pinned.Id,
+                    Icon = icon
+                };
+                targetItems.Add(item);
+            }
+            else
+            {
+                // Pinned app is currently closed
+                var icon = ExtractIconForPath(pinnedExe);
+                var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp)
+                {
+                    Title = pinned.Title,
+                    ExecutablePath = pinnedExe,
+                    ProcessName = cleanPinnedName,
+                    WindowHandle = IntPtr.Zero,
+                    IsOpen = false,
+                    IsFocused = false,
+                    IsMinimized = false,
+                    IsPinned = true,
+                    ShortcutId = pinned.Id,
+                    Icon = icon
+                };
+                targetItems.Add(item);
+            }
+        }
+
+        // 2. Process all open windows that were not already merged with a pinned app
+        foreach (var win in windows)
+        {
+            if (matchedWindowHandles.Contains(win.Handle))
+            {
+                continue;
+            }
+
+            string? exePath = !string.IsNullOrWhiteSpace(win.ExecutablePath) ? win.ExecutablePath : TryGetExecutablePath(win.Handle);
+            var icon = win.Icon ?? (exePath != null ? ExtractIconForPath(exePath) : null);
+
+            var item = new DockAppItem(ExecuteDockAppClick, TogglePinApp)
+            {
+                Title = win.Title,
+                ExecutablePath = exePath,
+                ProcessName = win.ProcessName,
+                WindowHandle = win.Handle,
+                IsOpen = true,
+                IsFocused = win.IsFocused,
+                IsMinimized = win.IsMinimized,
+                IsPinned = false,
+                ShortcutId = null,
+                Icon = icon
+            };
+            targetItems.Add(item);
+        }
+
+        // Synchronize into DockApps collection in-place to avoid visual flickering
+        SyncDockApps(targetItems);
+
+        // Also update OpenAppsForPinning (for CustomizationWindow 1-click pinning)
+        SyncOpenAppsForPinning(windows, pinnedShortcuts);
+    }
+
+    private static bool IsWindowMatchForShortcut(AppWindowInfo win, DockShortcut shortcut)
+    {
+        if (string.IsNullOrWhiteSpace(shortcut.TargetPath))
+        {
+            return false;
+        }
+
+        string cleanShortcutName = Path.GetFileNameWithoutExtension(shortcut.TargetPath);
+        if (cleanShortcutName.Equals(win.ProcessName, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (shortcut.TargetPath.EndsWith(win.ProcessName + ".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string? winExe = TryGetExecutablePath(win.Handle);
+        if (!string.IsNullOrWhiteSpace(winExe) && string.Equals(winExe, shortcut.TargetPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private void SyncDockApps(List<DockAppItem> target)
+    {
+        for (int i = 0; i < target.Count; i++)
+        {
+            var newItem = target[i];
+            if (i < DockApps.Count)
+            {
+                var existing = DockApps[i];
+                if (CanUpdateInPlace(existing, newItem))
+                {
+                    existing.Title = newItem.Title;
+                    existing.ExecutablePath = newItem.ExecutablePath;
+                    existing.ProcessName = newItem.ProcessName;
+                    existing.WindowHandle = newItem.WindowHandle;
+                    existing.IsOpen = newItem.IsOpen;
+                    existing.IsFocused = newItem.IsFocused;
+                    existing.IsMinimized = newItem.IsMinimized;
+                    existing.IsPinned = newItem.IsPinned;
+                    existing.ShortcutId = newItem.ShortcutId;
+                    if (newItem.Icon != null)
+                    {
+                        existing.Icon = newItem.Icon;
+                    }
+                }
+                else
+                {
+                    DockApps[i] = newItem;
+                }
+            }
+            else
+            {
+                DockApps.Add(newItem);
+            }
+        }
+
+        while (DockApps.Count > target.Count)
+        {
+            DockApps.RemoveAt(DockApps.Count - 1);
+        }
+    }
+
+    private static bool CanUpdateInPlace(DockAppItem existing, DockAppItem target)
+    {
+        if (existing.IsPinned && target.IsPinned && string.Equals(existing.ShortcutId, target.ShortcutId, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (existing.WindowHandle != IntPtr.Zero && existing.WindowHandle == target.WindowHandle)
+        {
+            return true;
+        }
+
+        if (string.Equals(existing.ProcessName, target.ProcessName, StringComparison.OrdinalIgnoreCase) && existing.IsPinned == target.IsPinned)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void SyncOpenWindows(IReadOnlyList<AppWindowInfo> latest)
@@ -875,6 +1387,52 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    private void SyncOpenAppsForPinning(IReadOnlyList<AppWindowInfo> windows, List<DockShortcut> pinned)
+    {
+        var pinnedPaths = pinned.Select(p => p.TargetPath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var pinnedNames = pinned.Select(p => Path.GetFileNameWithoutExtension(p.TargetPath)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = 0; i < windows.Count; i++)
+        {
+            var win = windows[i];
+            string? exe = !string.IsNullOrWhiteSpace(win.ExecutablePath) ? win.ExecutablePath : TryGetExecutablePath(win.Handle);
+            bool isPinned = (!string.IsNullOrWhiteSpace(exe) && pinnedPaths.Contains(exe))
+                || pinnedNames.Contains(win.ProcessName);
+
+            if (i < OpenAppsForPinning.Count)
+            {
+                var existing = OpenAppsForPinning[i];
+                if (existing.WindowInfo.Handle == win.Handle)
+                {
+                    existing.IsPinned = isPinned;
+                }
+                else
+                {
+                    OpenAppsForPinning[i] = new OpenAppPinItem(TogglePinOpenAppItem)
+                    {
+                        WindowInfo = win,
+                        ExecutablePath = exe,
+                        IsPinned = isPinned
+                    };
+                }
+            }
+            else
+            {
+                OpenAppsForPinning.Add(new OpenAppPinItem(TogglePinOpenAppItem)
+                {
+                    WindowInfo = win,
+                    ExecutablePath = exe,
+                    IsPinned = isPinned
+                });
+            }
+        }
+
+        while (OpenAppsForPinning.Count > windows.Count)
+        {
+            OpenAppsForPinning.RemoveAt(OpenAppsForPinning.Count - 1);
+        }
+    }
+
     private static bool AreSameWindowState(AppWindowInfo a, AppWindowInfo b)
     {
         return a.Handle == b.Handle
@@ -884,104 +1442,171 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                && string.Equals(a.ProcessName, b.ProcessName, StringComparison.Ordinal);
     }
 
-    private void UpdatePinnedShortcutsRunningState()
+    /// <summary>
+    /// Requirement (2): Clicking an open app calls ToggleOrActivateWindow(handle),
+    /// and clicking a closed pinned app launches its ExecutablePath!
+    /// </summary>
+    private void ExecuteDockAppClick(DockAppItem item)
     {
-        var openNames = OpenWindows.Select(w => w.ProcessName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var shortcut in PinnedShortcuts)
+        if (item == null) return;
+
+        if (item.IsOpen && item.WindowHandle != IntPtr.Zero)
         {
-            string cleanName = Path.GetFileNameWithoutExtension(shortcut.TargetPath);
-            shortcut.IsRunning = openNames.Contains(cleanName)
-                || (shortcut.TargetPath.Contains("discord", StringComparison.OrdinalIgnoreCase) && DiscordStatus.IsRunning)
-                || (shortcut.TargetPath.Contains("steam", StringComparison.OrdinalIgnoreCase) && SteamStatus.IsRunning);
+            SafeInvoke(() => _windowTrackerService.ToggleOrActivateWindow(item.WindowHandle));
+            RefreshFastState();
+        }
+        else if (!string.IsNullOrWhiteSpace(item.ExecutablePath))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(item.ExecutablePath)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Fallback attempt with process name
+                try
+                {
+                    Process.Start(new ProcessStartInfo(item.ProcessName)
+                    {
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                    // Ignore start error
+                }
+            }
         }
     }
 
-    private async Task RefreshTelemetryAsync()
+    /// <summary>
+    /// Requirement (2): Pin/unpin that app's ExecutablePath and save to JSON immediately!
+    /// </summary>
+    public void PinApp(DockAppItem item)
     {
-        if (_isDisposed || _isRefreshingTelemetry)
+        if (item == null) return;
+
+        string? path = item.ExecutablePath;
+        if (string.IsNullOrWhiteSpace(path) && item.WindowHandle != IntPtr.Zero)
+        {
+            path = TryGetExecutablePath(item.WindowHandle);
+            item.ExecutablePath = path;
+        }
+
+        if (string.IsNullOrWhiteSpace(path))
         {
             return;
         }
 
-        _isRefreshingTelemetry = true;
-        try
+        var existing = _dockSettingsService.CurrentSettings.PinnedShortcuts
+            .FirstOrDefault(s => string.Equals(s.TargetPath, path, StringComparison.OrdinalIgnoreCase));
+
+        if (existing == null)
         {
-            var snapshot = await Task.Run(() =>
+            var shortcut = new DockShortcut
             {
-                HardwareMetrics hw;
-                try { hw = _hardwareMonitorService.GetCurrentMetrics(); }
-                catch { hw = new HardwareMetrics(); }
+                Id = Guid.NewGuid().ToString(),
+                Title = !string.IsNullOrWhiteSpace(item.Title) ? item.Title : Path.GetFileNameWithoutExtension(path),
+                TargetPath = path
+            };
 
-                MediaInfo media;
-                try { media = _mediaIntegrationService.GetCurrentMedia(); }
-                catch { media = new MediaInfo(); }
-
-                SteamStatus steam;
-                try { steam = _steamIntegrationService.GetStatus(); }
-                catch { steam = new SteamStatus(); }
-
-                AiUsageSnapshot ai;
-                try { ai = _aiUsageService.GetUsageSnapshot(); }
-                catch { ai = new AiUsageSnapshot(); }
-
-                DiscordStatus discord;
-                try { discord = _discordStatusService.GetStatus(); }
-                catch { discord = new DiscordStatus(); }
-
-                return (hw, media, steam, ai, discord);
-            });
-
-            if (_isDisposed)
-            {
-                return;
-            }
-
-            Hardware = snapshot.hw;
-            CurrentMedia = snapshot.media;
-            UpdateSteamState(snapshot.steam);
-            UpdateAiState(snapshot.ai);
-            DiscordStatus = snapshot.discord;
-            OnPropertyChanged(nameof(IsNativeTaskbarHidden));
-            OnPropertyChanged(nameof(NativeTaskbarStatusText));
+            // AddShortcut calls SaveSettings() immediately to persist to dock_settings.json
+            _dockSettingsService.AddShortcut(shortcut);
+            item.ShortcutId = shortcut.Id;
+            item.IsPinned = true;
         }
-        finally
+        else
         {
-            _isRefreshingTelemetry = false;
+            item.ShortcutId = existing.Id;
+            item.IsPinned = true;
+        }
+
+        SyncPinnedShortcutsFromSettings();
+        RefreshFastState();
+    }
+
+    /// <summary>
+    /// Requirement (2): Unpin app and save to JSON immediately!
+    /// </summary>
+    public void UnpinApp(DockAppItem item)
+    {
+        if (item == null) return;
+
+        if (!string.IsNullOrWhiteSpace(item.ShortcutId))
+        {
+            _dockSettingsService.RemoveShortcut(item.ShortcutId);
+        }
+        else if (!string.IsNullOrWhiteSpace(item.ExecutablePath))
+        {
+            var match = _dockSettingsService.CurrentSettings.PinnedShortcuts
+                .FirstOrDefault(s => string.Equals(s.TargetPath, item.ExecutablePath, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                _dockSettingsService.RemoveShortcut(match.Id);
+            }
+        }
+
+        item.IsPinned = false;
+        item.ShortcutId = null;
+
+        SyncPinnedShortcutsFromSettings();
+        RefreshFastState();
+    }
+
+    public void TogglePinApp(DockAppItem item)
+    {
+        if (item == null) return;
+        if (item.IsPinned)
+        {
+            UnpinApp(item);
+        }
+        else
+        {
+            PinApp(item);
         }
     }
 
-    private void UpdateSteamState(SteamStatus status)
+    /// <summary>
+    /// Requirement (2): 1-click pinning of open apps inside CustomizationWindow!
+    /// </summary>
+    public void PinOpenWindow(AppWindowInfo window)
     {
-        var games = status.InstalledGames ?? Array.Empty<SteamGameInfo>();
-        bool gamesChanged = games.Count != InstalledGames.Count
-                            || !games.Select(g => g.AppId).SequenceEqual(InstalledGames.Select(g => g.AppId));
+        if (window == null) return;
 
-        if (gamesChanged)
+        string? path = !string.IsNullOrWhiteSpace(window.ExecutablePath) ? window.ExecutablePath : TryGetExecutablePath(window.Handle);
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        var existing = _dockSettingsService.CurrentSettings.PinnedShortcuts
+            .FirstOrDefault(s => string.Equals(s.TargetPath, path, StringComparison.OrdinalIgnoreCase));
+
+        if (existing != null)
         {
-            var previousSelectedId = SelectedSteamGame?.AppId;
-            InstalledGames.Clear();
-            foreach (var game in games)
+            // Already pinned: unpin and save immediately
+            _dockSettingsService.RemoveShortcut(existing.Id);
+        }
+        else
+        {
+            // Pin and save immediately
+            var shortcut = new DockShortcut
             {
-                InstalledGames.Add(game);
-            }
-
-            SelectedSteamGame = InstalledGames.FirstOrDefault(g => g.AppId == previousSelectedId)
-                                ?? InstalledGames.FirstOrDefault();
+                Id = Guid.NewGuid().ToString(),
+                Title = !string.IsNullOrWhiteSpace(window.Title) ? window.Title : Path.GetFileNameWithoutExtension(path),
+                TargetPath = path
+            };
+            _dockSettingsService.AddShortcut(shortcut);
         }
 
-        SteamStatus = status;
+        SyncPinnedShortcutsFromSettings();
+        RefreshFastState();
     }
 
-    private void UpdateAiState(AiUsageSnapshot snapshot)
+    private void TogglePinOpenAppItem(OpenAppPinItem pinItem)
     {
-        var providers = snapshot.Providers ?? Array.Empty<AiProviderUsage>();
-        AiProviders.Clear();
-        foreach (var provider in providers)
-        {
-            AiProviders.Add(provider);
-        }
-
-        AiUsage = snapshot;
+        if (pinItem == null) return;
+        PinOpenWindow(pinItem.WindowInfo);
     }
 
     private void ExecuteWindowClick(object? parameter)
@@ -989,30 +1614,23 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         if (parameter is AppWindowInfo windowInfo && windowInfo.Handle != IntPtr.Zero)
         {
             SafeInvoke(() => _windowTrackerService.ToggleOrActivateWindow(windowInfo.Handle));
-            RefreshOpenWindows();
+            RefreshFastState();
         }
         else if (parameter is IntPtr handle && handle != IntPtr.Zero)
         {
             SafeInvoke(() => _windowTrackerService.ToggleOrActivateWindow(handle));
-            RefreshOpenWindows();
+            RefreshFastState();
+        }
+        else if (parameter is DockAppItem dockItem)
+        {
+            ExecuteDockAppClick(dockItem);
         }
     }
 
-    private void LaunchShortcut(PinnedShortcutItem shortcut)
+    private void LaunchPinnedShortcut(PinnedShortcutItem shortcut)
     {
         try
         {
-            if (string.Equals(shortcut.TargetPath, "discord", StringComparison.OrdinalIgnoreCase))
-            {
-                _discordStatusService.FocusOrLaunchDiscord();
-                return;
-            }
-            if (string.Equals(shortcut.TargetPath, "steam", StringComparison.OrdinalIgnoreCase))
-            {
-                _steamIntegrationService.OpenSteam();
-                return;
-            }
-
             Process.Start(new ProcessStartInfo(shortcut.TargetPath, shortcut.Arguments)
             {
                 UseShellExecute = true
@@ -1027,13 +1645,18 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public void AddShortcut(string name, string targetPath, string arguments = "", string glyph = "🚀")
     {
         if (string.IsNullOrWhiteSpace(targetPath)) return;
-        PinnedShortcuts.Add(new PinnedShortcutItem(LaunchShortcut)
+
+        var shortcut = new DockShortcut
         {
-            Name = string.IsNullOrWhiteSpace(name) ? Path.GetFileNameWithoutExtension(targetPath) : name,
+            Id = Guid.NewGuid().ToString(),
+            Title = string.IsNullOrWhiteSpace(name) ? Path.GetFileNameWithoutExtension(targetPath) : name,
             TargetPath = targetPath,
-            Arguments = arguments,
-            IconGlyph = glyph
-        });
+            Arguments = arguments
+        };
+
+        _dockSettingsService.AddShortcut(shortcut);
+        SyncPinnedShortcutsFromSettings();
+        RefreshFastState();
     }
 
     private void ExecuteAddCustomShortcut(object? parameter)
@@ -1048,7 +1671,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         if (parameter is PinnedShortcutItem item)
         {
+            _dockSettingsService.RemoveShortcut(item.Id);
             PinnedShortcuts.Remove(item);
+            RefreshFastState();
         }
     }
 
@@ -1060,6 +1685,19 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             if (idx > 0)
             {
                 PinnedShortcuts.Move(idx, idx - 1);
+                var list = _dockSettingsService.CurrentSettings.PinnedShortcuts;
+                var found = list.FirstOrDefault(s => s.Id == item.Id);
+                if (found != null)
+                {
+                    int sIdx = list.IndexOf(found);
+                    if (sIdx > 0)
+                    {
+                        list.RemoveAt(sIdx);
+                        list.Insert(sIdx - 1, found);
+                        _dockSettingsService.SaveSettings();
+                    }
+                }
+                RefreshFastState();
             }
         }
     }
@@ -1072,6 +1710,19 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             if (idx >= 0 && idx < PinnedShortcuts.Count - 1)
             {
                 PinnedShortcuts.Move(idx, idx + 1);
+                var list = _dockSettingsService.CurrentSettings.PinnedShortcuts;
+                var found = list.FirstOrDefault(s => s.Id == item.Id);
+                if (found != null)
+                {
+                    int sIdx = list.IndexOf(found);
+                    if (sIdx >= 0 && sIdx < list.Count - 1)
+                    {
+                        list.RemoveAt(sIdx);
+                        list.Insert(sIdx + 1, found);
+                        _dockSettingsService.SaveSettings();
+                    }
+                }
+                RefreshFastState();
             }
         }
     }
@@ -1197,6 +1848,193 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         Application.Current?.Shutdown();
     }
 
+    private async Task RefreshTelemetryAsync()
+    {
+        if (_isDisposed || _isRefreshingTelemetry)
+        {
+            return;
+        }
+
+        _isRefreshingTelemetry = true;
+        try
+        {
+            var snapshot = await Task.Run(() =>
+            {
+                HardwareMetrics hw;
+                try { hw = _hardwareMonitorService.GetCurrentMetrics(); }
+                catch { hw = new HardwareMetrics(); }
+
+                MediaInfo media;
+                try { media = _mediaIntegrationService.GetCurrentMedia(); }
+                catch { media = new MediaInfo(); }
+
+                SteamStatus steam;
+                try { steam = _steamIntegrationService.GetStatus(); }
+                catch { steam = new SteamStatus(); }
+
+                AiUsageSnapshot ai;
+                try { ai = _aiUsageService.GetUsageSnapshot(); }
+                catch { ai = new AiUsageSnapshot(); }
+
+                DiscordStatus discord;
+                try { discord = _discordStatusService.GetStatus(); }
+                catch { discord = new DiscordStatus(); }
+
+                return (hw, media, steam, ai, discord);
+            });
+
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            Hardware = snapshot.hw;
+            CurrentMedia = snapshot.media;
+            UpdateSteamState(snapshot.steam);
+            UpdateAiState(snapshot.ai);
+            DiscordStatus = snapshot.discord;
+            OnPropertyChanged(nameof(IsNativeTaskbarHidden));
+            OnPropertyChanged(nameof(NativeTaskbarStatusText));
+        }
+        finally
+        {
+            _isRefreshingTelemetry = false;
+        }
+    }
+
+    private void UpdateSteamState(SteamStatus status)
+    {
+        var games = status.InstalledGames ?? Array.Empty<SteamGameInfo>();
+        bool gamesChanged = games.Count != InstalledGames.Count
+                            || !games.Select(g => g.AppId).SequenceEqual(InstalledGames.Select(g => g.AppId));
+
+        if (gamesChanged)
+        {
+            var previousSelectedId = SelectedSteamGame?.AppId;
+            InstalledGames.Clear();
+            foreach (var game in games)
+            {
+                InstalledGames.Add(game);
+            }
+
+            SelectedSteamGame = InstalledGames.FirstOrDefault(g => g.AppId == previousSelectedId)
+                                ?? InstalledGames.FirstOrDefault();
+        }
+
+        SteamStatus = status;
+    }
+
+    private void UpdateAiState(AiUsageSnapshot snapshot)
+    {
+        var providers = snapshot.Providers ?? Array.Empty<AiProviderUsage>();
+        AiProviders.Clear();
+        foreach (var provider in providers)
+        {
+            AiProviders.Add(provider);
+        }
+
+        AiUsage = snapshot;
+    }
+
+    public static ImageSource? ExtractIconForPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+
+        if (IconCache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        try
+        {
+            string resolvedPath = Environment.ExpandEnvironmentVariables(path);
+            if (!File.Exists(resolvedPath))
+            {
+                string winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                string sys32 = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                if (File.Exists(Path.Combine(sys32, resolvedPath)))
+                {
+                    resolvedPath = Path.Combine(sys32, resolvedPath);
+                }
+                else if (File.Exists(Path.Combine(winDir, resolvedPath)))
+                {
+                    resolvedPath = Path.Combine(winDir, resolvedPath);
+                }
+            }
+
+            if (File.Exists(resolvedPath))
+            {
+                using var sysIcon = System.Drawing.Icon.ExtractAssociatedIcon(resolvedPath);
+                if (sysIcon != null)
+                {
+                    var bitmap = Imaging.CreateBitmapSourceFromHIcon(
+                        sysIcon.Handle,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                    bitmap.Freeze();
+                    IconCache[path] = bitmap;
+                    return bitmap;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore icon extraction failure
+        }
+
+        IconCache[path] = null;
+        return null;
+    }
+
+    public static string? TryGetExecutablePath(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero) return null;
+
+        if (ExePathCache.TryGetValue(hWnd, out var cached))
+        {
+            return cached;
+        }
+
+        string? exePath = null;
+        try
+        {
+            Win32Interop.GetWindowThreadProcessId(hWnd, out uint pid);
+            if (pid > 0)
+            {
+                IntPtr hProcess = Win32Interop.OpenProcess(Win32Interop.PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+                if (hProcess != IntPtr.Zero)
+                {
+                    try
+                    {
+                        var sb = new StringBuilder(1024);
+                        int size = sb.Capacity;
+                        if (Win32Interop.QueryFullProcessImageName(hProcess, 0, sb, ref size) && size > 0)
+                        {
+                            exePath = sb.ToString();
+                        }
+                    }
+                    finally
+                    {
+                        Win32Interop.CloseHandle(hProcess);
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(exePath))
+                {
+                    using var proc = Process.GetProcessById((int)pid);
+                    exePath = proc.MainModule?.FileName;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore access errors on system processes
+        }
+
+        ExePathCache[hWnd] = exePath;
+        return exePath;
+    }
+
     private static void SafeInvoke(Action action)
     {
         try
@@ -1205,7 +2043,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
         catch
         {
-            // Prevent external integration failures from crashing UI commands
+            // Prevent integration errors from crashing UI
         }
     }
 

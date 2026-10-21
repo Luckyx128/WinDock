@@ -27,7 +27,63 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- 1x1 Icon Slot Button Style (40x40) -->
+        <!-- Modern Dark Glassmorphic ContextMenu Style -->
+        <Style x:Key="DarkContextMenuStyle" TargetType="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource WindowCardBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource WindowBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark MenuItem Style -->
+        <Style x:Key="DarkMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="MenuItemBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0" ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" Margin="6,0,8,0" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="MenuItemBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 1x1 Standard Icon Slot Button Style (40x40) -->
         <Style x:Key="DockIconSlotStyle" TargetType="Button">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="38" />
@@ -65,8 +121,8 @@
             </Setter>
         </Style>
 
-        <!-- Open Window 1x1 Slot Button Style (40x40) with Focus Indicator Bar -->
-        <Style x:Key="OpenWindowSlotStyle" TargetType="Button">
+        <!-- Unified 1x1 Dock App Slot Style (40x40) with real icon and active/focus indicator bar -->
+        <Style x:Key="UnifiedDockAppSlotStyle" TargetType="Button">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="38" />
             <Setter Property="Background" Value="Transparent" />
@@ -90,7 +146,7 @@
                                                   VerticalAlignment="Center" />
                             </Border>
 
-                            <!-- Subtle Focus Bar at the bottom (NO text labels next to window icons!) -->
+                            <!-- Subtle Focus / Open Indicator Bar at bottom (NO text labels next to icons!) -->
                             <Border x:Name="FocusBar"
                                     Height="2.5"
                                     Width="12"
@@ -99,9 +155,15 @@
                                     HorizontalAlignment="Center"
                                     Margin="0,0,0,2.5"
                                     Background="{DynamicResource TextSecondaryBrush}"
-                                    Opacity="0.45" />
+                                    Opacity="0.45"
+                                    Visibility="Collapsed" />
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <!-- If Open, show indicator bar -->
+                            <DataTrigger Binding="{Binding IsOpen}" Value="True">
+                                <Setter TargetName="FocusBar" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <!-- If Focused, glowing accent bar and pill highlight -->
                             <DataTrigger Binding="{Binding IsFocused}" Value="True">
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
@@ -109,6 +171,7 @@
                                 <Setter TargetName="FocusBar" Property="Width" Value="22" />
                                 <Setter TargetName="FocusBar" Property="Opacity" Value="1.0" />
                             </DataTrigger>
+                            <!-- If Minimized, subtle dimmed look -->
                             <DataTrigger Binding="{Binding IsMinimized}" Value="True">
                                 <Setter TargetName="CardBorder" Property="Opacity" Value="0.60" />
                                 <Setter TargetName="FocusBar" Property="Width" Value="6" />
@@ -117,6 +180,10 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                <Setter TargetName="CardBorder" Property="Opacity" Value="0.85" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -178,7 +245,7 @@
             </Setter>
         </Style>
 
-        <!-- DataTemplate for Modular Dock Widgets -->
+        <!-- DataTemplate for Modular Dock Widgets (Can be enabled via CustomizationWindow) -->
         <DataTemplate x:Key="DockWidgetTemplate">
             <Border Height="38"
                     Width="{Binding TargetWidth}"
@@ -191,10 +258,8 @@
                     ToolTip="{Binding Description}">
                 
                 <Grid VerticalAlignment="Center">
-
-                    <!-- ================= HARDWARE MONITOR WIDGET ================= -->
+                    <!-- HARDWARE MONITOR WIDGET -->
                     <Grid x:Name="HardwareWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1 (44px): Visual Icon + Dual Mini Gauge Bars -->
                         <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="⚡" FontSize="11" Foreground="{DynamicResource AccentCyanBrush}" Margin="0,0,3,0" VerticalAlignment="Center" />
@@ -209,11 +274,8 @@
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
-
-                        <!-- 1x2 (98px): Visual CPU + RAM Gauges with Percent Text -->
                         <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <!-- CPU -->
                                 <StackPanel Orientation="Vertical" Width="40" Margin="0,0,6,0">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="C " FontSize="9" FontWeight="Medium" Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -222,11 +284,8 @@
                                     </StackPanel>
                                     <ProgressBar Style="{StaticResource MiniGaugeStyle}"
                                                  Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                 Foreground="{DynamicResource AccentCyanBrush}"
-                                                 Margin="0,2,0,0" />
+                                                 Foreground="{DynamicResource AccentCyanBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
-
-                                <!-- RAM -->
                                 <StackPanel Orientation="Vertical" Width="40">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="R " FontSize="9" FontWeight="Medium" Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -235,16 +294,12 @@
                                     </StackPanel>
                                     <ProgressBar Style="{StaticResource MiniGaugeStyle}"
                                                  Value="{Binding DataContext.RamPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                 Foreground="{DynamicResource AccentGreenBrush}"
-                                                 Margin="0,2,0,0" />
+                                                 Foreground="{DynamicResource AccentGreenBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
-
-                        <!-- 1x3 (156px): Visual CPU, GPU, and RAM Gauges -->
                         <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <!-- CPU -->
                                 <StackPanel Orientation="Vertical" Width="44" Margin="0,0,6,0">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="CPU " FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -253,11 +308,8 @@
                                     </StackPanel>
                                     <ProgressBar Style="{StaticResource MiniGaugeStyle}"
                                                  Value="{Binding DataContext.CpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                 Foreground="{DynamicResource AccentCyanBrush}"
-                                                 Margin="0,2,0,0" />
+                                                 Foreground="{DynamicResource AccentCyanBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
-
-                                <!-- GPU -->
                                 <StackPanel Orientation="Vertical" Width="44" Margin="0,0,6,0">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="GPU " FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -266,11 +318,8 @@
                                     </StackPanel>
                                     <ProgressBar Style="{StaticResource MiniGaugeStyle}"
                                                  Value="{Binding DataContext.GpuPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                 Foreground="{DynamicResource AccentPurpleBrush}"
-                                                 Margin="0,2,0,0" />
+                                                 Foreground="{DynamicResource AccentPurpleBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
-
-                                <!-- RAM -->
                                 <StackPanel Orientation="Vertical" Width="44">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="RAM " FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" />
@@ -279,291 +328,80 @@
                                     </StackPanel>
                                     <ProgressBar Style="{StaticResource MiniGaugeStyle}"
                                                  Value="{Binding DataContext.RamPercent, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                 Foreground="{DynamicResource AccentGreenBrush}"
-                                                 Margin="0,2,0,0" />
+                                                 Foreground="{DynamicResource AccentGreenBrush}" Margin="0,2,0,0" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
                     </Grid>
 
-                    <!-- ================= MEDIA & YOUTUBE WIDGET ================= -->
+                    <!-- MEDIA & YOUTUBE WIDGET -->
                     <Grid x:Name="MediaWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1 (44px): Visual Play/Pause Icon with Source Badge -->
                         <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
                             <Button Style="{StaticResource MiniActionButtonStyle}"
                                     Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                     ToolTip="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="⏯" FontSize="12" Foreground="{DynamicResource AccentCyanBrush}" />
-                                </StackPanel>
+                                <TextBlock Text="⏯" FontSize="12" Foreground="{DynamicResource AccentCyanBrush}" />
                             </Button>
                         </Grid>
-
-                        <!-- 1x2 (98px): Badge + Play/Pause + Next Track -->
                         <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
                                         Command="{Binding DataContext.OpenYouTubeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Abrir YouTube / Mídia">
+                                        ToolTip="Abrir YouTube">
                                     <Border CornerRadius="4" Padding="3,1" Background="#2638BDF8">
                                         <TextBlock Text="▶" FontSize="8.5" FontWeight="Medium" Foreground="{DynamicResource AccentCyanBrush}" />
                                     </Border>
                                 </Button>
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
                                         Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Play / Pause"
-                                        Content="⏯" FontSize="11" Margin="2,0" />
+                                        ToolTip="Play / Pause" Content="⏯" FontSize="11" Margin="2,0" />
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
                                         Command="{Binding DataContext.NextTrackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Próxima Faixa"
-                                        Content="⏭" FontSize="10.5" />
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- 1x3 (156px): Source Badge + Prev + Play/Pause + Next + Title -->
-                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Command="{Binding DataContext.PreviousTrackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Faixa Anterior" Content="⏮" FontSize="10" />
-                                <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Play / Pause" Content="⏯" FontSize="11" Margin="1,0" />
-                                <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Command="{Binding DataContext.NextTrackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Próxima Faixa" Content="⏭" FontSize="10" Margin="0,0,4,0" />
-                                <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
-                                           FontSize="10" FontWeight="Normal"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           MaxWidth="74" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                        ToolTip="Próxima Faixa" Content="⏭" FontSize="10.5" />
                             </StackPanel>
                         </Grid>
                     </Grid>
 
-                    <!-- ================= STEAM WIDGET ================= -->
+                    <!-- STEAM WIDGET -->
                     <Grid x:Name="SteamWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1 (44px): Steam Icon with Status Dot -->
-                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    Width="36" Height="34">
-                                <Grid>
-                                    <TextBlock Text="🎮" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    <!-- Status Dot: Green if in game, Cyan if Steam running, Gray if offline -->
-                                    <Border Width="6" Height="6" CornerRadius="3"
-                                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="{DynamicResource TextMutedBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DataContext.IsSteamRunning, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource AccentCyanBrush}" />
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding DataContext.IsSteamGameRunning, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource AccentGreenBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
-                            </Button>
-                        </Grid>
-
-                        <!-- 1x2 (98px): Steam Icon + Status Badge -->
-                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Width="90" Height="32"
-                                    Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.SteamSubText, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="🎮" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="10" FontWeight="Medium"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               MaxWidth="68" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <!-- 1x3 (156px): Steam Icon + Game Title + Quick Launch -->
-                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Width="146" Height="32"
-                                    Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.SteamSubText, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="🎮" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   MaxWidth="120" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding DataContext.SteamSubText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   MaxWidth="120" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
+                        <Button Style="{StaticResource MiniActionButtonStyle}"
+                                Command="{Binding DataContext.LaunchSelectedSteamGameCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ToolTip="{Binding DataContext.SteamHeadlineText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                Width="36" Height="34">
+                            <TextBlock Text="🎮" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Button>
                     </Grid>
 
-                    <!-- ================= DISCORD WIDGET ================= -->
+                    <!-- DISCORD WIDGET -->
                     <Grid x:Name="DiscordWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1 (44px): Discord Icon with Status Dot -->
-                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Command="{Binding DataContext.FocusDiscordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    Width="36" Height="34">
-                                <Grid>
-                                    <TextBlock Text="💬" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    <Border Width="6" Height="6" CornerRadius="3"
-                                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,2,0">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="{DynamicResource TextMutedBrush}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DataContext.IsDiscordRunning, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource AccentGreenBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-                                </Grid>
-                            </Button>
-                        </Grid>
-
-                        <!-- 1x2 (98px): Discord Icon + Activity Badge -->
-                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Width="90" Height="32"
-                                    Command="{Binding DataContext.FocusDiscordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="💬" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding DataContext.DiscordActivityText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="10" FontWeight="Medium"
-                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                               MaxWidth="68" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <!-- 1x3 (156px): Discord Icon + Detailed Status -->
-                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Width="146" Height="32"
-                                    Command="{Binding DataContext.FocusDiscordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="💬" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding DataContext.DiscordActivityText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   MaxWidth="120" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   MaxWidth="120" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
+                        <Button Style="{StaticResource MiniActionButtonStyle}"
+                                Command="{Binding DataContext.FocusDiscordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ToolTip="{Binding DataContext.DiscordSubText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                Width="36" Height="34">
+                            <TextBlock Text="💬" FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Button>
                     </Grid>
 
-                    <!-- ================= AI USAGE WIDGET ================= -->
+                    <!-- AI WIDGET -->
                     <Grid x:Name="AiWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1 (44px): AI Sparkle Icon + Request Count Badge -->
-                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Command="{Binding DataContext.ToggleWidgetsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.AiBadgeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    Width="36" Height="34">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="✨" FontSize="11" Foreground="{DynamicResource AccentPurpleBrush}" />
-                                    <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="9.5" FontWeight="Medium" Margin="2,0,0,0"
-                                               Foreground="{DynamicResource TextPrimaryBrush}" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <!-- 1x2 (98px): AI Sparkle + Reqs Badge -->
-                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Width="90" Height="32"
-                                    Command="{Binding DataContext.ToggleWidgetsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.AiBadgeText, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                    <TextBlock Text="✨" FontSize="10.5" Foreground="{DynamicResource AccentPurpleBrush}" Margin="0,0,4,0" />
-                                    <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}, StringFormat='{}{0} reqs'}"
-                                               FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-
-                        <!-- 1x3 (156px): AI Sparkle + Model Name + Reqs -->
-                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                            <Button Style="{StaticResource MiniActionButtonStyle}"
-                                    Width="146" Height="32"
-                                    Command="{Binding DataContext.ToggleWidgetsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    ToolTip="{Binding DataContext.AiBadgeText, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="✨" FontSize="11" Foreground="{DynamicResource AccentPurpleBrush}" Margin="0,0,5,0" />
-                                    <StackPanel Orientation="Vertical" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding DataContext.AiActiveModelSummary, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="10" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   MaxWidth="120" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}, StringFormat='{}{0} requisições hoje'}"
-                                                   FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Button>
-                        </Grid>
-                    </Grid>
-
-                    <!-- ================= CLOCK & DATE WIDGET ================= -->
-                    <Grid x:Name="ClockWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1 (44px): Digital Clock HH:mm -->
-                        <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                       FontSize="11" FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Grid>
-
-                        <!-- 1x2 (98px): Digital Clock + Seconds & Date -->
-                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                    <TextBlock Text="{Binding DataContext.CurrentSecondsText, RelativeSource={RelativeSource AncestorType=Window}, StringFormat=':{0}'}"
-                                               FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Bottom" Margin="0,0,0,1" />
-                                </StackPanel>
-                                <TextBlock Text="{Binding DataContext.CurrentDateText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                           FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- 1x3 (156px): Full Clock + Date + Greeting -->
-                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                        <Button Style="{StaticResource MiniActionButtonStyle}"
+                                Command="{Binding DataContext.ToggleWidgetsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ToolTip="{Binding DataContext.AiBadgeText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                Width="36" Height="34">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <StackPanel Orientation="Vertical" Margin="0,0,8,0">
-                                    <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="12" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}" />
-                                    <TextBlock Text="{Binding DataContext.CurrentDateText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="8.5" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                </StackPanel>
-                                <Border CornerRadius="4" Padding="4,2" Background="{DynamicResource PillHoverBrush}" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding DataContext.GreetingText, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               FontSize="9" FontWeight="Medium" Foreground="{DynamicResource AccentCyanBrush}" />
-                                </Border>
+                                <TextBlock Text="✨" FontSize="11" Foreground="{DynamicResource AccentPurpleBrush}" />
+                                <TextBlock Text="{Binding DataContext.TotalAiInteractionsToday, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           FontSize="9.5" FontWeight="Medium" Margin="2,0,0,0" Foreground="{DynamicResource TextPrimaryBrush}" />
                             </StackPanel>
-                        </Grid>
+                        </Button>
                     </Grid>
 
+                    <!-- CLOCK WIDGET -->
+                    <Grid x:Name="ClockWidgetPanel" Visibility="Collapsed">
+                        <TextBlock Text="{Binding DataContext.CurrentTimeText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                   FontSize="11" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
                 </Grid>
             </Border>
 
@@ -603,25 +441,12 @@
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center">
             
-            <!-- ONE UNIFIED HORIZONTAL STRIP: Everything shares the same hierarchy! -->
+            <!-- ONE CLEAN UNIFIED HORIZONTAL STRIP: Open Apps + Pinned Apps (1x1 items) + One subtle gear button at the end! -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
 
-                <!-- 1. WinDock Start Logo Slot (40x40) -->
-                <Button Style="{StaticResource DockIconSlotStyle}"
-                        Command="{Binding ToggleNativeTaskbarCommand}"
-                        ToolTip="WinDock — Clique para alternar a barra nativa do Windows">
-                    <Grid Width="22" Height="22">
-                        <Border Width="16" Height="16" CornerRadius="8"
-                                Background="{DynamicResource AccentColorBrush}"
-                                HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <TextBlock Text="✦" FontSize="10" FontWeight="Bold"
-                                   Foreground="#0B0E14"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Grid>
-                </Button>
-
-                <!-- 2. Pinned Shortcuts (40x40 1x1 icon-only slots) -->
-                <ItemsControl ItemsSource="{Binding PinnedShortcuts}">
+                <!-- Requirement (2): UNIFIED DOCK APPS (1x1 40x40 items) -->
+                <!-- Combines user-pinned apps and open windows into one unified collection with real icons & active indicators! -->
+                <ItemsControl ItemsSource="{Binding DockApps}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
@@ -629,44 +454,57 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Button Style="{StaticResource DockIconSlotStyle}"
-                                    Command="{Binding LaunchCommand}"
-                                    ToolTip="{Binding Name}">
-                                <Grid Width="38" Height="36">
-                                    <TextBlock Text="{Binding IconGlyph}"
-                                               FontSize="16"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                    <!-- Indicator dot if process is currently running -->
-                                    <Border Width="4" Height="4" CornerRadius="2"
-                                            Background="{DynamicResource AccentColorBrush}"
-                                            HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                                            Margin="0,0,0,2"
-                                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
-                                </Grid>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Subtle Separator -->
-                <Border Width="1" Height="20" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.5" />
-
-                <!-- 3. Open Windows (40x40 1x1 icon-only slots with bottom focus bar, NO text labels!) -->
-                <ItemsControl ItemsSource="{Binding OpenWindows}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Style="{StaticResource OpenWindowSlotStyle}"
-                                    Command="{Binding DataContext.WindowClickCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"
+                            <Button Style="{StaticResource UnifiedDockAppSlotStyle}"
+                                    Command="{Binding ClickCommand}"
                                     ToolTip="{Binding Title}">
+                                
+                                <!-- Right-click dark context menu for any app icon -->
+                                <Button.ContextMenu>
+                                    <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
+                                        <!-- Fixar / Desafixar da Dock: saves to JSON immediately! -->
+                                        <MenuItem Header="{Binding PinMenuText}"
+                                                  Command="{Binding TogglePinCommand}"
+                                                  Style="{StaticResource DarkMenuItemStyle}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="📌" FontSize="11" Foreground="{DynamicResource AccentColorBrush}" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+
+                                        <!-- Personalizar Dock... -->
+                                        <MenuItem Header="Personalizar Dock..."
+                                                  Command="{Binding DataContext.OpenCustomizationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Style="{StaticResource DarkMenuItemStyle}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="⚙" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <!-- Alternar Barra do Windows -->
+                                        <MenuItem Header="Alternar Barra do Windows"
+                                                  Command="{Binding DataContext.ToggleNativeTaskbarCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Style="{StaticResource DarkMenuItemStyle}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="🪟" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+
+                                        <!-- Sair do WinDock -->
+                                        <MenuItem Header="Sair do WinDock"
+                                                  Command="{Binding DataContext.ExitAppCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Style="{StaticResource DarkMenuItemStyle}">
+                                            <MenuItem.Icon>
+                                                <TextBlock Text="✕" FontSize="11" Foreground="{DynamicResource AccentRedBrush}" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+
+                                <!-- Real App Icon slot -->
                                 <Grid Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <!-- Window Icon -->
                                     <Image Source="{Binding Icon}"
                                            Width="20"
                                            Height="20"
@@ -678,10 +516,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Subtle Separator -->
-                <Border Width="1" Height="20" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.5" />
-
-                <!-- 4. Modular Dock Widgets (Sizes: 1x1=44px, 1x2=98px, 1x3=156px) -->
+                <!-- Modular Dock Widgets (all IsVisible=false by default so dock starts 100% clean) -->
                 <ItemsControl ItemsSource="{Binding DockWidgets}"
                               ItemTemplate="{StaticResource DockWidgetTemplate}">
                     <ItemsControl.ItemsPanel>
@@ -696,36 +531,14 @@
                     </ItemsControl.ItemContainerStyle>
                 </ItemsControl>
 
-                <!-- Subtle Separator -->
-                <Border Width="1" Height="20" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.5" />
+                <!-- Subtle Separator before settings gear button -->
+                <Border Width="1" Height="18" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.4" />
 
-                <!-- 5. Settings & Quick Controls (40x40 1x1 icon slots) -->
-                <!-- Gear Icon Button to Open CustomizationWindow -->
+                <!-- Requirement (1): One subtle gear icon button at the end to open CustomizationWindow -->
                 <Button Style="{StaticResource DockIconSlotStyle}"
                         Command="{Binding OpenCustomizationCommand}"
-                        ToolTip="Personalização e Configurações (Temas, Widgets, Atalhos)">
-                    <TextBlock Text="⚙" FontSize="15" Foreground="{DynamicResource TextSecondaryBrush}" />
-                </Button>
-
-                <!-- Desktop Widgets Toggle -->
-                <Button Style="{StaticResource DockIconSlotStyle}"
-                        Command="{Binding ToggleWidgetsCommand}"
-                        ToolTip="Alternar camada de Widgets no Desktop">
-                    <TextBlock Text="🗂" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" />
-                </Button>
-
-                <!-- Dock Edge Position Toggle (Base / Topo) -->
-                <Button Style="{StaticResource DockIconSlotStyle}"
-                        Command="{Binding ToggleBarEdgeCommand}"
-                        ToolTip="Alternar posição da barra (Base / Topo)">
-                    <TextBlock Text="⇅" FontSize="14" FontWeight="Medium" Foreground="{DynamicResource TextSecondaryBrush}" />
-                </Button>
-
-                <!-- Exit WinDock -->
-                <Button Style="{StaticResource DockIconSlotStyle}"
-                        Command="{Binding ExitAppCommand}"
-                        ToolTip="Fechar WinDock e restaurar barra do Windows">
-                    <TextBlock Text="✕" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AccentRedBrush}" />
+                        ToolTip="Personalizar Dock &amp; Configurações (⚙)">
+                    <TextBlock Text="⚙" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" />
                 </Button>
 
             </StackPanel>

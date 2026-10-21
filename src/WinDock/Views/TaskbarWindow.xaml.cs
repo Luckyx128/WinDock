@@ -35,6 +35,7 @@ public partial class TaskbarWindow : Window
 
         _viewModel.EdgeChanged += OnEdgeChanged;
         _viewModel.WidgetsVisibilityChanged += OnWidgetsVisibilityChanged;
+        _viewModel.FullscreenStateChanged += OnFullscreenStateChanged;
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
@@ -49,6 +50,32 @@ public partial class TaskbarWindow : Window
     {
         RegisterOrUpdateBar();
         _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, BarHeightDip);
+    }
+
+    /// <summary>
+    /// Requirement (3): FULLSCREEN AUTO-HIDE FIX.
+    /// When true (e.g. fullscreen game or fullscreen YouTube video), hide TaskbarWindow (Topmost = false; Visibility = Visibility.Collapsed)
+    /// so it NEVER stays on top of fullscreen games or videos!
+    /// When false, restore TaskbarWindow (Visibility = Visibility.Visible; Topmost = true).
+    /// </summary>
+    private void OnFullscreenStateChanged(object? sender, bool isFullscreen)
+    {
+        if (isFullscreen)
+        {
+            if (Visibility != Visibility.Collapsed)
+            {
+                Topmost = false;
+                Visibility = Visibility.Collapsed;
+            }
+        }
+        else
+        {
+            if (Visibility != Visibility.Visible)
+            {
+                Visibility = Visibility.Visible;
+                Topmost = true;
+            }
+        }
     }
 
     private void RegisterOrUpdateBar()
@@ -122,6 +149,7 @@ public partial class TaskbarWindow : Window
     {
         _viewModel.EdgeChanged -= OnEdgeChanged;
         _viewModel.WidgetsVisibilityChanged -= OnWidgetsVisibilityChanged;
+        _viewModel.FullscreenStateChanged -= OnFullscreenStateChanged;
 
         if (_isBarRegistered)
         {
