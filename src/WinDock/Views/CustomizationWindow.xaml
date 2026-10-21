@@ -255,7 +255,7 @@
                         <Border Style="{StaticResource SettingsCardStyle}">
                             <StackPanel>
                                 <TextBlock Text="Hierarquia Unificada: Widgets Modulares" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
-                                <TextBlock Text="Todos os itens na dock compartilham a mesma linha e hierarquia. Você pode alterar o tamanho dos widgets entre 1x1 (44px), 1x2 (98px) e 1x3 (156px), ativá-los ou reordená-los."
+                                <TextBlock Text="Todos os itens na dock compartilham a mesma linha e hierarquia. Você pode alterar o tamanho dos widgets entre 1x1 (40px), 1x2 (82px) e 1x3 (124px), ativá-los ou reordená-los."
                                            FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
 
                                 <ItemsControl ItemsSource="{Binding DockWidgets}">
@@ -290,7 +290,7 @@
                                                     <!-- Center: 3-Way Size Buttons -->
                                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
                                                         <Button Content="1x1"
-                                                                ToolTip="Tamanho 1x1 (44px) - Compacto"
+                                                                ToolTip="Tamanho 1x1 (40px) - Compacto (1 slot)"
                                                                 Command="{Binding SetSize1x1Command}"
                                                                 Padding="7,3" Margin="0,0,3,0">
                                                             <Button.Style>
@@ -306,7 +306,7 @@
                                                         </Button>
 
                                                         <Button Content="1x2"
-                                                                ToolTip="Tamanho 1x2 (98px) - Médio"
+                                                                ToolTip="Tamanho 1x2 (82px) - Médio (2 slots)"
                                                                 Command="{Binding SetSize1x2Command}"
                                                                 Padding="7,3" Margin="0,0,3,0">
                                                             <Button.Style>
@@ -322,7 +322,7 @@
                                                         </Button>
 
                                                         <Button Content="1x3"
-                                                                ToolTip="Tamanho 1x3 (156px) - Expandido"
+                                                                ToolTip="Tamanho 1x3 (124px) - Expandido (3 slots)"
                                                                 Command="{Binding SetSize1x3Command}"
                                                                 Padding="7,3">
                                                             <Button.Style>

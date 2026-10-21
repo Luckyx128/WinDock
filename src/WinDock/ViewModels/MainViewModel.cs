@@ -100,10 +100,10 @@ public sealed class DockWidgetItem : INotifyPropertyChanged
 
     public double TargetWidth => Size switch
     {
-        DockWidgetSize.Size1x1 => 44.0,
-        DockWidgetSize.Size1x2 => 98.0,
-        DockWidgetSize.Size1x3 => 156.0,
-        _ => 44.0
+        DockWidgetSize.Size1x1 => 40.0,
+        DockWidgetSize.Size1x2 => 82.0,
+        DockWidgetSize.Size1x3 => 124.0,
+        _ => 40.0
     };
 
     public bool IsSize1x1 => Size == DockWidgetSize.Size1x1;
@@ -111,9 +111,9 @@ public sealed class DockWidgetItem : INotifyPropertyChanged
     public bool IsSize1x3 => Size == DockWidgetSize.Size1x3;
     public string SizeLabel => Size switch
     {
-        DockWidgetSize.Size1x1 => "1x1 (44px)",
-        DockWidgetSize.Size1x2 => "1x2 (98px)",
-        DockWidgetSize.Size1x3 => "1x3 (156px)",
+        DockWidgetSize.Size1x1 => "1x1 (40px)",
+        DockWidgetSize.Size1x2 => "1x2 (82px)",
+        DockWidgetSize.Size1x3 => "1x3 (124px)",
         _ => "1x1"
     };
 
@@ -739,12 +739,25 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     /// <summary>
     /// Requirement (1): Set all DockWidgets IsVisible=false by default so the dock starts 100% clean.
+    /// When any widget is made visible, AreWidgetsVisible is automatically turned on.
     /// </summary>
     private void InitializeDockWidgets()
     {
         DockWidgets.Clear();
 
-        DockWidgets.Add(new DockWidgetItem
+        void AddWidget(DockWidgetItem item)
+        {
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(DockWidgetItem.IsVisible) && item.IsVisible)
+                {
+                    AreWidgetsVisible = true;
+                }
+            };
+            DockWidgets.Add(item);
+        }
+
+        AddWidget(new DockWidgetItem
         {
             Id = "hardware",
             Title = "Monitor de Hardware",
@@ -754,7 +767,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Size = DockWidgetSize.Size1x2
         });
 
-        DockWidgets.Add(new DockWidgetItem
+        AddWidget(new DockWidgetItem
         {
             Id = "media",
             Title = "Mídia & YouTube",
@@ -764,7 +777,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Size = DockWidgetSize.Size1x2
         });
 
-        DockWidgets.Add(new DockWidgetItem
+        AddWidget(new DockWidgetItem
         {
             Id = "steam",
             Title = "Steam Game Status",
@@ -774,7 +787,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Size = DockWidgetSize.Size1x1
         });
 
-        DockWidgets.Add(new DockWidgetItem
+        AddWidget(new DockWidgetItem
         {
             Id = "discord",
             Title = "Discord Presence",
@@ -784,7 +797,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Size = DockWidgetSize.Size1x1
         });
 
-        DockWidgets.Add(new DockWidgetItem
+        AddWidget(new DockWidgetItem
         {
             Id = "ai",
             Title = "Resumo IA",
@@ -794,7 +807,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             Size = DockWidgetSize.Size1x1
         });
 
-        DockWidgets.Add(new DockWidgetItem
+        AddWidget(new DockWidgetItem
         {
             Id = "clock",
             Title = "Relógio & Calendário",
@@ -803,6 +816,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             IsVisible = false,
             Size = DockWidgetSize.Size1x2
         });
+    }
+
+    public void ToggleWidgetVisibility(DockWidgetItem? widget)
+    {
+        if (widget == null) return;
+        widget.IsVisible = !widget.IsVisible;
+        if (widget.IsVisible)
+        {
+            AreWidgetsVisible = true;
+        }
     }
 
     public IntPtr ExcludeWindowHandle
