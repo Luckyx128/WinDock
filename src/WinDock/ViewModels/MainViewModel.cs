@@ -1698,7 +1698,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(DiscordVoiceStatusText));
             OnPropertyChanged(nameof(IsDiscordVoiceSpeaking));
             OnPropertyChanged(nameof(IsDiscordMuted));
+            OnPropertyChanged(nameof(DiscordIsMuted));
             OnPropertyChanged(nameof(IsDiscordDeafened));
+            OnPropertyChanged(nameof(DiscordIsDeafened));
             OnPropertyChanged(nameof(DiscordMuteTooltip));
             OnPropertyChanged(nameof(DiscordDeafenTooltip));
             if (value.DiscordClientIcon != null && _discordClientIcon == null)
@@ -1732,7 +1734,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string DiscordVoiceStatusText => DiscordStatus.IsInVoiceCall ? $"Em call · {DiscordStatus.VoiceCallDurationFormatted}" : "Fora de call";
     public bool IsDiscordVoiceSpeaking => DiscordStatus.IsVoiceSpeaking;
     public bool IsDiscordMuted => DiscordStatus.IsMuted;
+    public bool DiscordIsMuted => DiscordStatus.IsMuted;
     public bool IsDiscordDeafened => DiscordStatus.IsDeafened;
+    public bool DiscordIsDeafened => DiscordStatus.IsDeafened;
     public string DiscordMuteTooltip => DiscordStatus.IsMuted ? "Microfone Mutado (Clique para Desmutar)" : "Microfone Ativo (Clique para Mutar)";
     public string DiscordDeafenTooltip => DiscordStatus.IsDeafened ? "Áudio Ensurdecido (Clique para Ativar)" : "Áudio Ativo (Clique para Ensurdecer)";
 
