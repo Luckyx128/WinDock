@@ -33,23 +33,7 @@ public partial class DesktopWidgetsWindow : Window
         var helper = new WindowInteropHelper(this);
         IntPtr hwnd = helper.Handle != IntPtr.Zero ? helper.Handle : helper.EnsureHandle();
 
-        // 1. Establish Desktop/Progman as Owner so Win + D recognizes widgets as part of Desktop
-        IntPtr desktopHwnd = Win32Interop.FindDesktopHwnd();
-        if (desktopHwnd != IntPtr.Zero)
-        {
-            try
-            {
-                helper.Owner = desktopHwnd;
-            }
-            catch
-            {
-                // Fallback to SetWindowLongPtr below
-            }
-
-            Win32Interop.SetWindowLongPtr(hwnd, Win32Interop.GWLP_HWNDPARENT, desktopHwnd);
-        }
-
-        // 2. Install HwndSourceHook to block Win+D minimize and hide commands
+        // Install HwndSourceHook to block Win+D minimize and hide commands
         var source = HwndSource.FromHwnd(hwnd);
         source?.AddHook(DesktopHook);
 
@@ -72,19 +56,25 @@ public partial class DesktopWidgetsWindow : Window
 
             case Win32Interop.WM_SHOWWINDOW:
                 // If wParam == IntPtr.Zero, Explorer is attempting to hide windows during Show Desktop (Win + D).
-                // Block the hide command while widgets are enabled so they stay visible on the wallpaper.
+                // Block the hide command while widgets are enabled so they stay visible on the desktop.
                 if (wParam == IntPtr.Zero && _viewModel.AreWidgetsVisible)
                 {
                     handled = true;
-                    // Re-enforce HWND_BOTTOM so widgets remain right behind normal app windows
+                    if (Visibility != Visibility.Visible)
+                    {
+                        Visibility = Visibility.Visible;
+                    }
+                    Opacity = 1.0;
+
+                    // Ensure window stays visible and non-topmost (never sink to HWND_BOTTOM behind wallpaper)
                     Win32Interop.SetWindowPos(
                         hwnd,
-                        Win32Interop.HWND_BOTTOM,
+                        Win32Interop.HWND_NOTOPMOST,
                         0,
                         0,
                         0,
                         0,
-                        Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE);
+                        Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_NOACTIVATE | Win32Interop.SWP_SHOWWINDOW);
                     return IntPtr.Zero;
                 }
                 break;
@@ -101,7 +91,7 @@ public partial class DesktopWidgetsWindow : Window
 
     private void OnActivated(object? sender, EventArgs e)
     {
-        // Keep desktop widgets pinned behind normal application windows
+        // Keep desktop widgets pinned as non-topmost desktop layer
         PinToDesktopLayer();
     }
 
@@ -109,6 +99,14 @@ public partial class DesktopWidgetsWindow : Window
     {
         try
         {
+            if (_viewModel.AreWidgetsVisible)
+            {
+                if (Visibility != Visibility.Visible)
+                {
+                    Visibility = Visibility.Visible;
+                }
+                Opacity = 1.0;
+            }
             _appBarService.PinToDesktop(this);
         }
         catch

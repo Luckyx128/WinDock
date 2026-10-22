@@ -104,7 +104,11 @@ public partial class App : System.Windows.Application
         // Clean startup: desktop widgets window starts hidden if AreWidgetsVisible is false
         if (_mainViewModel.AreWidgetsVisible)
         {
+            _widgetsWindow.Visibility = Visibility.Visible;
+            _widgetsWindow.Opacity = 1.0;
             _widgetsWindow.Show();
+            _widgetsWindow.RepositionForBarEdge(_mainViewModel.CurrentEdge, _mainViewModel.BarHeightDip);
+            _widgetsWindow.PinToDesktopLayer();
         }
 
         _taskbarWindow = new TaskbarWindow(_mainViewModel, _appBarService, _widgetsWindow);

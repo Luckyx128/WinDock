@@ -159,7 +159,10 @@ public partial class TaskbarWindow : Window
     {
         if (_viewModel.AreWidgetsVisible)
         {
+            _widgetsWindow.Visibility = Visibility.Visible;
+            _widgetsWindow.Opacity = 1.0;
             _widgetsWindow.Show();
+            _widgetsWindow.RepositionForBarEdge(_viewModel.CurrentEdge, _viewModel.BarHeightDip);
             _widgetsWindow.PinToDesktopLayer();
         }
         else
