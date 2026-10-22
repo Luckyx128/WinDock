@@ -73,6 +73,17 @@ public sealed class WindowTrackerService : IWindowTrackerService
                 return true;
             }
 
+            if (!Win32Interop.IsIconic(hWnd))
+            {
+                if (Win32Interop.GetWindowRect(hWnd, out Win32Interop.RECT r))
+                {
+                    if ((r.right - r.left) <= 0 || (r.bottom - r.top) <= 0)
+                    {
+                        return true;
+                    }
+                }
+            }
+
             string title = GetWindowTitle(hWnd);
             if (string.IsNullOrWhiteSpace(title))
             {
@@ -155,11 +166,29 @@ public sealed class WindowTrackerService : IWindowTrackerService
             return;
         }
 
+        // 1) Se IsIconic(handle), ShowWindow(handle, SW_RESTORE); senão ShowWindow(handle, SW_SHOW).
+        if (Win32Interop.IsIconic(handle))
+        {
+            Win32Interop.ShowWindow(handle, Win32Interop.SW_RESTORE);
+        }
+        else
+        {
+            Win32Interop.ShowWindow(handle, Win32Interop.SW_SHOW);
+        }
+
+        // 2) Obtenha foregroundHwnd. Se foregroundHwnd == handle, retorne.
         IntPtr foregroundHwnd = Win32Interop.GetForegroundWindow();
-        uint foregroundThreadId = Win32Interop.GetWindowThreadProcessId(foregroundHwnd, out _);
+        if (foregroundHwnd == handle)
+        {
+            return;
+        }
+
+        // 3) Obtenha currentThreadId, foregroundThreadId e targetThreadId.
         uint currentThreadId = Win32Interop.GetCurrentThreadId();
+        uint foregroundThreadId = Win32Interop.GetWindowThreadProcessId(foregroundHwnd, out _);
         uint targetThreadId = Win32Interop.GetWindowThreadProcessId(handle, out uint targetPid);
 
+        // 4) Chame AllowSetForegroundWindow.
         try
         {
             Win32Interop.AllowSetForegroundWindow((int)targetPid);
@@ -168,6 +197,7 @@ public sealed class WindowTrackerService : IWindowTrackerService
         }
         catch { }
 
+        // 5) Faça AttachThreadInput(currentThreadId, foregroundThreadId, true) e AttachThreadInput(currentThreadId, targetThreadId, true).
         bool attachedForeground = false;
         bool attachedTarget = false;
 
@@ -182,44 +212,52 @@ public sealed class WindowTrackerService : IWindowTrackerService
 
         try
         {
-            // 1. If iconic/minimized or has WS_MINIMIZE, restore it cleanly
-            int style = Win32Interop.GetWindowLong(handle, Win32Interop.GWL_STYLE);
-            if (Win32Interop.IsIconic(handle) || (style & Win32Interop.WS_MINIMIZE) != 0)
-            {
-                Win32Interop.ShowWindow(handle, Win32Interop.SW_RESTORE);
-                Win32Interop.ShowWindowAsync(handle, Win32Interop.SW_RESTORE);
-            }
-            else
-            {
-                Win32Interop.ShowWindow(handle, Win32Interop.SW_SHOW);
-                Win32Interop.ShowWindowAsync(handle, Win32Interop.SW_SHOW);
-            }
-
-            // 2. Bring window to the top of Z-order using HWND_TOPMOST -> HWND_NOTOPMOST
-            Win32Interop.BringWindowToTop(handle);
-
+            // 6) Fure a pilha do DWM:
             Win32Interop.SetWindowPos(
                 handle,
                 Win32Interop.HWND_TOPMOST,
                 0, 0, 0, 0,
                 Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_SHOWWINDOW);
 
+            bool ok = Win32Interop.SetForegroundWindow(handle);
+
             Win32Interop.SetWindowPos(
                 handle,
                 Win32Interop.HWND_NOTOPMOST,
                 0, 0, 0, 0,
-                Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_SHOWWINDOW);
+                Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE);
 
-            // 3. Unlock Foreground Lock via simulated ALT keystroke and force focus
-            Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, 0, UIntPtr.Zero);
-            Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, Win32Interop.KEYEVENTF_KEYUP, UIntPtr.Zero);
+            Win32Interop.BringWindowToTop(handle);
 
-            Win32Interop.SetForegroundWindow(handle);
-            Win32Interop.SwitchToThisWindow(handle, true);
+            if (!ok)
+            {
+                Win32Interop.SwitchToThisWindow(handle, true);
+            }
         }
         catch
         {
-            // Fallback attempt
+            try
+            {
+                Win32Interop.SwitchToThisWindow(handle, true);
+            }
+            catch { }
+        }
+        finally
+        {
+            // 7) No bloco finally: desanexe os threads em ordem inversa.
+            if (attachedTarget)
+            {
+                try { Win32Interop.AttachThreadInput(currentThreadId, targetThreadId, false); } catch { }
+            }
+            if (attachedForeground)
+            {
+                try { Win32Interop.AttachThreadInput(currentThreadId, foregroundThreadId, false); } catch { }
+            }
+        }
+
+        // 8) Fallback: se GetForegroundWindow() != handle, simule VK_MENU (Alt) down e up, e chame SetForegroundWindow e SwitchToThisWindow.
+        if (Win32Interop.GetForegroundWindow() != handle)
+        {
             try
             {
                 Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, 0, UIntPtr.Zero);
@@ -228,17 +266,6 @@ public sealed class WindowTrackerService : IWindowTrackerService
                 Win32Interop.SwitchToThisWindow(handle, true);
             }
             catch { }
-        }
-        finally
-        {
-            if (attachedForeground)
-            {
-                try { Win32Interop.AttachThreadInput(currentThreadId, foregroundThreadId, false); } catch { }
-            }
-            if (attachedTarget)
-            {
-                try { Win32Interop.AttachThreadInput(currentThreadId, targetThreadId, false); } catch { }
-            }
         }
     }
 

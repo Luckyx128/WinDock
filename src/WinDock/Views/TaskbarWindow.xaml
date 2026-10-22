@@ -257,7 +257,6 @@
         <DataTemplate DataType="{x:Type vm:DockAppItem}">
             <Button Style="{StaticResource UnifiedDockAppSlotStyle}"
                     Command="{Binding ClickCommand}"
-                    Click="DockAppButton_Click"
                     ToolTip="{Binding Title}"
                     PreviewMouseLeftButtonDown="DockItem_PreviewMouseLeftButtonDown"
                     PreviewMouseMove="DockItem_PreviewMouseMove"
