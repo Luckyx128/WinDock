@@ -120,22 +120,113 @@ public sealed class WindowTrackerService : IWindowTrackerService
         }
 
         IntPtr foregroundHwnd = Win32Interop.GetForegroundWindow();
-
-        if (Win32Interop.IsIconic(handle))
+        if (foregroundHwnd == handle)
         {
-            Win32Interop.ShowWindow(handle, Win32Interop.SW_RESTORE);
-            BringWindowToTop(handle);
-            Win32Interop.SetForegroundWindow(handle);
-        }
-        else if (foregroundHwnd == handle)
-        {
-            Win32Interop.ShowWindow(handle, Win32Interop.SW_MINIMIZE);
+            MinimizeWindow(handle);
         }
         else
         {
-            BringWindowToTop(handle);
-            Win32Interop.ShowWindow(handle, Win32Interop.SW_SHOW);
+            ActivateWindow(handle);
+        }
+    }
+
+    public void MinimizeWindow(IntPtr handle)
+    {
+        if (handle == IntPtr.Zero || !Win32Interop.IsWindow(handle))
+        {
+            return;
+        }
+
+        try
+        {
+            Win32Interop.ShowWindow(handle, Win32Interop.SW_MINIMIZE);
+            Win32Interop.ShowWindowAsync(handle, Win32Interop.SW_MINIMIZE);
+        }
+        catch
+        {
+            // Ignore minimize errors
+        }
+    }
+
+    public void ActivateWindow(IntPtr handle)
+    {
+        if (handle == IntPtr.Zero || !Win32Interop.IsWindow(handle))
+        {
+            return;
+        }
+
+        IntPtr foregroundHwnd = Win32Interop.GetForegroundWindow();
+        uint foregroundThreadId = Win32Interop.GetWindowThreadProcessId(foregroundHwnd, out _);
+        uint currentThreadId = Win32Interop.GetCurrentThreadId();
+        uint targetThreadId = Win32Interop.GetWindowThreadProcessId(handle, out uint targetPid);
+
+        try
+        {
+            Win32Interop.AllowSetForegroundWindow((int)targetPid);
+            Win32Interop.AllowSetForegroundWindow(Win32Interop.ASFW_ANY);
+            Win32Interop.LockSetForegroundWindow(Win32Interop.LSFW_UNLOCK);
+        }
+        catch { }
+
+        bool attachedForeground = false;
+        bool attachedTarget = false;
+
+        if (foregroundThreadId != 0 && foregroundThreadId != currentThreadId)
+        {
+            attachedForeground = Win32Interop.AttachThreadInput(currentThreadId, foregroundThreadId, true);
+        }
+        if (targetThreadId != 0 && targetThreadId != currentThreadId)
+        {
+            attachedTarget = Win32Interop.AttachThreadInput(currentThreadId, targetThreadId, true);
+        }
+
+        try
+        {
+            // 1. If iconic/minimized or has WS_MINIMIZE, restore it cleanly
+            int style = Win32Interop.GetWindowLong(handle, Win32Interop.GWL_STYLE);
+            if (Win32Interop.IsIconic(handle) || (style & Win32Interop.WS_MINIMIZE) != 0)
+            {
+                Win32Interop.ShowWindow(handle, Win32Interop.SW_RESTORE);
+                Win32Interop.ShowWindowAsync(handle, Win32Interop.SW_RESTORE);
+            }
+            else
+            {
+                Win32Interop.ShowWindow(handle, Win32Interop.SW_SHOW);
+                Win32Interop.ShowWindowAsync(handle, Win32Interop.SW_SHOW);
+            }
+
+            // 2. Bring window to the top of Z-order
+            Win32Interop.BringWindowToTop(handle);
+
+            Win32Interop.SetWindowPos(
+                handle,
+                Win32Interop.HWND_TOP,
+                0, 0, 0, 0,
+                Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_SHOWWINDOW);
+
+            // 3. Force foreground focus through standard and shell switch APIs
             Win32Interop.SetForegroundWindow(handle);
+            Win32Interop.SwitchToThisWindow(handle, true);
+        }
+        catch
+        {
+            // Fallback attempt
+            try
+            {
+                Win32Interop.SwitchToThisWindow(handle, true);
+            }
+            catch { }
+        }
+        finally
+        {
+            if (attachedForeground)
+            {
+                try { Win32Interop.AttachThreadInput(currentThreadId, foregroundThreadId, false); } catch { }
+            }
+            if (attachedTarget)
+            {
+                try { Win32Interop.AttachThreadInput(currentThreadId, targetThreadId, false); } catch { }
+            }
         }
     }
 

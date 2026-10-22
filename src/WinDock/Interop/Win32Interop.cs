@@ -35,6 +35,13 @@ public static class Win32Interop
     public const int GWL_STYLE = -16;
     public const int GWL_EXSTYLE = -20;
 
+    // Window Styles
+    public const int WS_MINIMIZE = 0x20000000;
+
+    // Foreground Activation Constants
+    public const int ASFW_ANY = -1;
+    public const uint LSFW_UNLOCK = 2;
+
     // Extended Window Styles
     public const int WS_EX_TOOLWINDOW = 0x00000080;
     public const int WS_EX_APPWINDOW = 0x00040000;
@@ -189,7 +196,28 @@ public static class Win32Interop
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     [DllImport("user32.dll")]
+    public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern void SwitchToThisWindow(IntPtr hWnd, bool fUnknown);
+
+    [DllImport("user32.dll")]
+    public static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("kernel32.dll")]
+    public static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    public static extern bool AllowSetForegroundWindow(int dwProcessId);
+
+    [DllImport("user32.dll")]
+    public static extern bool LockSetForegroundWindow(uint uCode);
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();

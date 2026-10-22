@@ -2484,6 +2484,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                && string.Equals(a.ProcessName, b.ProcessName, StringComparison.Ordinal);
     }
 
+    private IntPtr _lastClickedHwnd = IntPtr.Zero;
+    private long _lastClickTicks = 0;
+
     /// <summary>
     /// Requirement (2): Clicking an open app calls ToggleOrActivateWindow(handle),
     /// and clicking a closed pinned app launches its ExecutablePath!
@@ -2492,9 +2495,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         if (item == null) return;
 
-        if (item.IsOpen && item.WindowHandle != IntPtr.Zero)
+        if (item.IsOpen && item.WindowHandle != IntPtr.Zero && Win32Interop.IsWindow(item.WindowHandle))
         {
-            SafeInvoke(() => _windowTrackerService.ToggleOrActivateWindow(item.WindowHandle));
+            long now = Environment.TickCount64;
+            if (item.WindowHandle == _lastClickedHwnd && (now - _lastClickTicks) < 250)
+            {
+                return; // Deduplicate simultaneous triggers within 250ms
+            }
+            _lastClickedHwnd = item.WindowHandle;
+            _lastClickTicks = now;
+
+            if (item.IsFocused)
+            {
+                SafeInvoke(() => _windowTrackerService.MinimizeWindow(item.WindowHandle));
+            }
+            else
+            {
+                SafeInvoke(() => _windowTrackerService.ActivateWindow(item.WindowHandle));
+            }
             RefreshFastState();
         }
         else if (!string.IsNullOrWhiteSpace(item.ExecutablePath))

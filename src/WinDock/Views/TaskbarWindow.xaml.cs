@@ -380,6 +380,16 @@ public partial class TaskbarWindow : Window
         }
     }
 
+    private void DockAppButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_isDraggingDockItem) return;
+
+        if (sender is FrameworkElement fe && fe.DataContext is DockAppItem app)
+        {
+            app.ClickCommand?.Execute(null);
+        }
+    }
+
     // Backward-compatibility forwarders
     private void DockAppButton_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => DockItem_PreviewMouseLeftButtonDown(sender, e);
     private void DockAppButton_PreviewMouseMove(object sender, MouseEventArgs e) => DockItem_PreviewMouseMove(sender, e);

@@ -24,6 +24,8 @@ public interface IWindowTrackerService
 {
     IReadOnlyList<AppWindowInfo> GetOpenWindows(IntPtr excludeWindowHandle);
     void ToggleOrActivateWindow(IntPtr handle);
+    void ActivateWindow(IntPtr handle);
+    void MinimizeWindow(IntPtr handle);
     bool IsForegroundWindowFullscreen();
     bool IsForegroundWindowFullscreen(IntPtr excludeWindowHandle);
     ImageSource? ExtractIconForPath(string filePath);

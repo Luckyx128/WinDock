@@ -157,7 +157,8 @@
                                     Margin="0,0,0,2.5"
                                     Background="{DynamicResource TextSecondaryBrush}"
                                     Opacity="0.45"
-                                    Visibility="Collapsed" />
+                                    Visibility="Collapsed"
+                                    IsHitTestVisible="False" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <!-- If Open, show indicator bar -->
@@ -256,6 +257,7 @@
         <DataTemplate DataType="{x:Type vm:DockAppItem}">
             <Button Style="{StaticResource UnifiedDockAppSlotStyle}"
                     Command="{Binding ClickCommand}"
+                    Click="DockAppButton_Click"
                     ToolTip="{Binding Title}"
                     PreviewMouseLeftButtonDown="DockItem_PreviewMouseLeftButtonDown"
                     PreviewMouseMove="DockItem_PreviewMouseMove"
