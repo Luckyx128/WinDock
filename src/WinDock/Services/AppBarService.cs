@@ -315,6 +315,24 @@ public sealed class AppBarService : IAppBarService
             return;
         }
 
+        IntPtr desktopHwnd = Win32Interop.FindDesktopHwnd();
+        if (desktopHwnd != IntPtr.Zero)
+        {
+            try
+            {
+                if (helper.Owner == IntPtr.Zero)
+                {
+                    helper.Owner = desktopHwnd;
+                }
+            }
+            catch
+            {
+                // Fallback to Win32 SetWindowLongPtr below if window is already shown
+            }
+
+            Win32Interop.SetWindowLongPtr(hwnd, Win32Interop.GWLP_HWNDPARENT, desktopHwnd);
+        }
+
         int exStyle = Win32Interop.GetWindowLong(hwnd, Win32Interop.GWL_EXSTYLE);
         exStyle |= Win32Interop.WS_EX_TOOLWINDOW | Win32Interop.WS_EX_NOACTIVATE;
         exStyle &= ~Win32Interop.WS_EX_APPWINDOW;

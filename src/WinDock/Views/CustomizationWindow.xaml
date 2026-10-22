@@ -438,7 +438,7 @@
                                 </Grid>
                             </Grid>
 
-                            <!-- MEDIA PREVIEW (Inspirado no card 'Fim de Tarde' com Thumbnail real/gradiente, título, artista, mini barra e botões) -->
+                            <!-- MEDIA PREVIEW (Estilo Card Steam com Background de Thumbnail translucida, titulo amplo e controles harmonizados) -->
                             <Grid x:Name="MediaPreview" Visibility="Collapsed">
                                 <!-- 1x1: Miniatura com badge de play/pause -->
                                 <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
@@ -463,104 +463,128 @@
                                         </Grid>
                                     </Border>
                                 </Grid>
-                                <!-- 1x2: Thumbnail 6px à esquerda + Título/Canal + Mini Barra de Progresso + Play/Pause -->
-                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}" Margin="3,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
 
-                                    <!-- Thumbnail com CornerRadius 6 -->
-                                    <Border Grid.Column="0" Width="22" Height="22" CornerRadius="6" ClipToBounds="True"
-                                            Margin="1,0,4,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                <!-- 1x2: Background com Thumbnail (Estilo Steam) + Thumbnail real + Titulo/Canal amplo + Play/Pause -->
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
+                                    <Border CornerRadius="6.5">
                                         <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#FF833A" Offset="0.0" />
-                                                <GradientStop Color="#E63956" Offset="0.5" />
-                                                <GradientStop Color="#6C2BD9" Offset="1.0" />
-                                            </LinearGradientBrush>
+                                            <ImageBrush ImageSource="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Stretch="UniformToFill" Opacity="0.32"
+                                                        RenderOptions.BitmapScalingMode="HighQuality" />
                                         </Border.Background>
-                                        <Grid>
-                                            <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
-                                            <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
-                                                  Stretch="Uniform" Width="8" Height="8" Fill="#80FFFFFF"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Grid>
                                     </Border>
+                                    <Border CornerRadius="6.5" Background="#770A0E18" />
 
-                                    <!-- Título, Artista/Canal e Mini Barra de Progresso -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,2,0">
-                                        <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="7.8" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="6.5"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="0,-1,0,1" />
-                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="1.8" Value="48"
-                                                     Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
-                                    </StackPanel>
+                                    <Grid Margin="4,0" VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <!-- Botão Compacto Play/Pause -->
-                                    <Path Grid.Column="2" Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                          Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}"
-                                          VerticalAlignment="Center" Margin="2,0,1,0" />
+                                        <!-- Thumbnail com CornerRadius 6 -->
+                                        <Border Grid.Column="0" Width="20" Height="20" CornerRadius="5" ClipToBounds="True"
+                                                Margin="0,0,4,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FF833A" Offset="0.0" />
+                                                    <GradientStop Color="#E63956" Offset="0.5" />
+                                                    <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Grid>
+                                                <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                                      Stretch="Uniform" Width="8" Height="8" Fill="#80FFFFFF"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Titulo, Artista/Canal com Espaco Amplo -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,2,0">
+                                            <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="8" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="6.8"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,-1,0,1" />
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="1.8" Value="48"
+                                                         Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
+                                        </StackPanel>
+
+                                        <!-- Botao Compacto Play/Pause -->
+                                        <Path Grid.Column="2" Data="M3 2v10l7-5z M12 2h2v10h-2z"
+                                              Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}"
+                                              VerticalAlignment="Center" Margin="1,0" />
+                                    </Grid>
                                 </Grid>
-                                <!-- 1x3: Thumbnail à esquerda + Título/Canal + Mini Barra + Controles Harmonizados -->
-                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}" Margin="3,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
 
-                                    <!-- Thumbnail real com CornerRadius 6 -->
-                                    <Border Grid.Column="0" Width="24" Height="24" CornerRadius="6" ClipToBounds="True"
-                                            Margin="2,0,5,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                <!-- 1x3: Background com Thumbnail (Estilo Steam) + Thumbnail real + Titulo/Canal amplo + Controles Harmonizados -->
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
+                                    <Border CornerRadius="6.5">
                                         <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                <GradientStop Color="#FF833A" Offset="0.0" />
-                                                <GradientStop Color="#E63956" Offset="0.5" />
-                                                <GradientStop Color="#6C2BD9" Offset="1.0" />
-                                            </LinearGradientBrush>
+                                            <ImageBrush ImageSource="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Stretch="UniformToFill" Opacity="0.32"
+                                                        RenderOptions.BitmapScalingMode="HighQuality" />
                                         </Border.Background>
-                                        <Grid>
-                                            <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
-                                            <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
-                                                  Stretch="Uniform" Width="9" Height="9" Fill="#80FFFFFF"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Grid>
                                     </Border>
+                                    <Border CornerRadius="6.5" Background="#770A0E18" />
 
-                                    <!-- Título, Artista/Canal e Mini Barra de Progresso Horizontal -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,3,0">
-                                        <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="8.2" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                   FontSize="6.8"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="0,-1,0,2" />
-                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="2" Value="52"
-                                                     Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
-                                    </StackPanel>
+                                    <Grid Margin="5,0" VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <!-- Mini Controles Prev / Play / Next -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,1,0">
-                                        <Path Data="M14 2v10l-6-5z M8 2v10l-6-5z M2 2h-2v10h2z"
-                                              Width="7" Height="7" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,3,0" />
-                                        <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                              Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,3,0" />
-                                        <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                              Width="7" Height="7" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
-                                    </StackPanel>
+                                        <!-- Thumbnail real com CornerRadius 6 -->
+                                        <Border Grid.Column="0" Width="22" Height="22" CornerRadius="5" ClipToBounds="True"
+                                                Margin="0,0,5,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FF833A" Offset="0.0" />
+                                                    <GradientStop Color="#E63956" Offset="0.5" />
+                                                    <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <Grid>
+                                                <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                                      Stretch="Uniform" Width="9" Height="9" Fill="#80FFFFFF"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Titulo, Artista/Canal com Espaco Total -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,3,0">
+                                            <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="8.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                       FontSize="7"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Margin="0,-1,0,2" />
+                                            <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="2" Value="52"
+                                                         Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
+                                        </StackPanel>
+
+                                        <!-- Mini Controles Prev / Play / Next -->
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="1,0">
+                                            <Path Data="M14 2v10l-6-5z M8 2v10l-6-5z M2 2h-2v10h2z"
+                                                  Width="7" Height="7" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,3,0" />
+                                            <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
+                                                  Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,3,0" />
+                                            <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
+                                                  Width="7" Height="7" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
+                                        </StackPanel>
+                                    </Grid>
                                 </Grid>
                             </Grid>
 

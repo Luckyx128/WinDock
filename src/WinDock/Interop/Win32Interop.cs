@@ -35,6 +35,18 @@ public static class Win32Interop
     // Window Long Indexes
     public const int GWL_STYLE = -16;
     public const int GWL_EXSTYLE = -20;
+    public const int GWL_HWNDPARENT = -8;
+    public const int GWLP_HWNDPARENT = -8;
+
+    // Window Messages & SysCommands
+    public const int WM_SHOWWINDOW = 0x0018;
+    public const int WM_SYSCOMMAND = 0x0112;
+    public const int SC_MINIMIZE = 0xF020;
+
+    // ShowWindow Status (lParam of WM_SHOWWINDOW)
+    public const int SW_PARENTCLOSING = 1;
+    public const int SW_OTHERZOOM = 2;
+    public const int SW_PARENTOPENING = 3;
 
     // Window Styles
     public const int WS_MINIMIZE = 0x20000000;
@@ -169,6 +181,32 @@ public static class Win32Interop
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongW", SetLastError = true)]
+    private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    public static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
+    {
+        return IntPtr.Size == 8
+            ? SetWindowLongPtr64(hWnd, nIndex, dwNewLong)
+            : new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
+    }
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+    private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongW", SetLastError = true)]
+    private static extern int GetWindowLong32(IntPtr hWnd, int nIndex);
+
+    public static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex)
+    {
+        return IntPtr.Size == 8
+            ? GetWindowLongPtr64(hWnd, nIndex)
+            : new IntPtr(GetWindowLong32(hWnd, nIndex));
+    }
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool SetWindowPos(
@@ -395,6 +433,41 @@ public static class Win32Interop
                 // Ignore shell launch failure
             }
         }
+    }
+
+    /// <summary>
+    /// Finds the Desktop HWND (Progman or active WorkerW hosting SHELLDLL_DefView).
+    /// </summary>
+    public static IntPtr FindDesktopHwnd()
+    {
+        IntPtr progman = FindWindow("Progman", null);
+        if (progman != IntPtr.Zero)
+        {
+            IntPtr defView = FindWindowEx(progman, IntPtr.Zero, "SHELLDLL_DefView", null);
+            if (defView != IntPtr.Zero)
+            {
+                return progman;
+            }
+        }
+
+        IntPtr targetWorkerW = IntPtr.Zero;
+        EnumWindows((hWnd, lParam) =>
+        {
+            IntPtr shellView = FindWindowEx(hWnd, IntPtr.Zero, "SHELLDLL_DefView", null);
+            if (shellView != IntPtr.Zero)
+            {
+                targetWorkerW = hWnd;
+                return false; // Stop enumeration
+            }
+            return true;
+        }, IntPtr.Zero);
+
+        if (targetWorkerW != IntPtr.Zero)
+        {
+            return targetWorkerW;
+        }
+
+        return progman != IntPtr.Zero ? progman : GetShellWindow();
     }
 
     /// <summary>

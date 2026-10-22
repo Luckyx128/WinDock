@@ -188,88 +188,92 @@
         </Border>
 
         <!-- ================= WIDGET 2: MEDIA & YOUTUBE HUB ================= -->
-        <Border Style="{StaticResource WidgetCardStyle}">
-            <StackPanel>
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="MÍDIA &amp; YOUTUBE"
-                               FontSize="9.5"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextSecondaryBrush}"
-                               VerticalAlignment="Center" />
+        <Border Style="{StaticResource WidgetCardStyle}" Padding="0" ClipToBounds="True">
+            <Grid>
+                <!-- Background com a Thumbnail da Mídia (Estilo Steam, Opacidade 0.30) -->
+                <Border CornerRadius="12">
+                    <Border.Background>
+                        <ImageBrush ImageSource="{Binding MediaThumbnail}"
+                                    Stretch="UniformToFill" Opacity="0.30"
+                                    RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border.Background>
+                </Border>
+                <!-- Overlay escuro translúcido para contraste perfeito de leitura -->
+                <Border CornerRadius="12" Background="#770A0E18" />
 
-                    <Border Grid.Column="1" CornerRadius="5" Padding="6,2">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="#2838BDF8" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsYouTubeActive}" Value="True">
-                                        <Setter Property="Background" Value="#D9EF4444" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Text="{Binding MediaSourceBadge}"
-                                   FontSize="9"
+                <!-- Conteúdo do Card com Espaçamento Limpo -->
+                <StackPanel Margin="14">
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="MÍDIA &amp; YOUTUBE"
+                                   FontSize="9.5"
                                    FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextPrimaryBrush}" />
-                    </Border>
-                </Grid>
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center" />
 
-                <TextBlock Text="{Binding MediaTitle}"
-                           FontSize="12"
-                           FontWeight="Medium"
-                           Foreground="{DynamicResource TextPrimaryBrush}"
-                           TextTrimming="CharacterEllipsis"
-                           Margin="0,0,0,2" />
+                        <Border Grid.Column="1" CornerRadius="5" Padding="6,2">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#2838BDF8" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsYouTubeActive}" Value="True">
+                                            <Setter Property="Background" Value="#D9EF4444" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <TextBlock Text="{Binding MediaSourceBadge}"
+                                       FontSize="9"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                        </Border>
+                    </Grid>
 
-                <TextBlock Text="{Binding MediaSubTitle}"
-                           FontSize="10.5"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           TextTrimming="CharacterEllipsis"
-                           Margin="0,0,0,8" />
+                    <TextBlock Text="{Binding MediaTitle}"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,0,0,2" />
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding MediaSubTitle}"
+                               FontSize="10.5"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,0,0,10" />
 
-                    <Button Grid.Column="0"
-                            Style="{StaticResource WidgetPillButtonStyle}"
-                            Command="{Binding PreviousTrackCommand}"
-                            Margin="0,0,5,0"
-                            Padding="8,4"
-                            Content="⏮" />
-                    <Button Grid.Column="1"
-                            Style="{StaticResource WidgetPillButtonStyle}"
-                            Command="{Binding PlayPauseCommand}"
-                            Margin="0,0,5,0"
-                            Padding="12,4"
-                            Content="⏯ Play / Pause" />
-                    <Button Grid.Column="2"
-                            Style="{StaticResource WidgetPillButtonStyle}"
-                            Command="{Binding NextTrackCommand}"
-                            Margin="0,0,6,0"
-                            Padding="8,4"
-                            Content="⏭" />
-                    <Button Grid.Column="3"
-                            Style="{StaticResource WidgetPillButtonStyle}"
-                            Command="{Binding OpenYouTubeCommand}"
-                            Padding="8,4"
-                            HorizontalAlignment="Right">
-                        <TextBlock Text="▶ YouTube"
-                                   FontSize="10.5"
-                                   FontWeight="Medium"
-                                   Foreground="#F87171" />
-                    </Button>
-                </Grid>
-            </StackPanel>
+                    <!-- Controles de Reprodução Limpos (Botão YouTube removido para foco total na mídia) -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Style="{StaticResource WidgetPillButtonStyle}"
+                                Command="{Binding PreviousTrackCommand}"
+                                Margin="0,0,6,0"
+                                Padding="10,4"
+                                Content="⏮" />
+                        <Button Grid.Column="1"
+                                Style="{StaticResource WidgetPillButtonStyle}"
+                                Command="{Binding PlayPauseCommand}"
+                                Margin="0,0,6,0"
+                                Padding="14,4"
+                                Content="⏯ Play / Pause" />
+                        <Button Grid.Column="2"
+                                Style="{StaticResource WidgetPillButtonStyle}"
+                                Command="{Binding NextTrackCommand}"
+                                Margin="0,0,6,0"
+                                Padding="10,4"
+                                Content="⏭" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- ================= WIDGET 3: AI USAGE SUMMARY ================= -->
