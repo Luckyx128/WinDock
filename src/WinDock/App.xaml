@@ -46,6 +46,136 @@
             <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
         </Style>
 
+        <!-- Dark Glassmorphic ScrollBar Styles (Overrides Windows default grey/white scrollbar) -->
+        <Style x:Key="DarkGlassmorphicThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border x:Name="ThumbBorder"
+                                Background="#33FFFFFF"
+                                CornerRadius="2.5"
+                                SnapsToDevicePixels="True" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#66FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbBorder" Property="Background" Value="#99FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <ControlTemplate x:Key="DarkGlassmorphicVerticalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
+            <Grid Background="Transparent" SnapsToDevicePixels="True">
+                <Track x:Name="PART_Track"
+                       IsDirectionReversed="True"
+                       HorizontalAlignment="Center"
+                       Width="5">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FocusVisualStyle="{x:Null}"
+                                      IsTabStop="False">
+                            <RepeatButton.Template>
+                                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                    <Rectangle Fill="Transparent" />
+                                </ControlTemplate>
+                            </RepeatButton.Template>
+                        </RepeatButton>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb Style="{StaticResource DarkGlassmorphicThumb}" />
+                    </Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FocusVisualStyle="{x:Null}"
+                                      IsTabStop="False">
+                            <RepeatButton.Template>
+                                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                    <Rectangle Fill="Transparent" />
+                                </ControlTemplate>
+                            </RepeatButton.Template>
+                        </RepeatButton>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Grid>
+        </ControlTemplate>
+
+        <ControlTemplate x:Key="DarkGlassmorphicHorizontalScrollBarTemplate" TargetType="{x:Type ScrollBar}">
+            <Grid Background="Transparent" SnapsToDevicePixels="True">
+                <Track x:Name="PART_Track"
+                       IsDirectionReversed="False"
+                       VerticalAlignment="Center"
+                       Height="5">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageLeftCommand}"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FocusVisualStyle="{x:Null}"
+                                      IsTabStop="False">
+                            <RepeatButton.Template>
+                                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                    <Rectangle Fill="Transparent" />
+                                </ControlTemplate>
+                            </RepeatButton.Template>
+                        </RepeatButton>
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb Style="{StaticResource DarkGlassmorphicThumb}" />
+                    </Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Command="{x:Static ScrollBar.PageRightCommand}"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      FocusVisualStyle="{x:Null}"
+                                      IsTabStop="False">
+                            <RepeatButton.Template>
+                                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                    <Rectangle Fill="Transparent" />
+                                </ControlTemplate>
+                            </RepeatButton.Template>
+                        </RepeatButton>
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Grid>
+        </ControlTemplate>
+
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="ContextMenu" Value="{x:Null}" />
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Vertical">
+                    <Setter Property="Width" Value="8" />
+                    <Setter Property="Height" Value="Auto" />
+                    <Setter Property="Template" Value="{StaticResource DarkGlassmorphicVerticalScrollBarTemplate}" />
+                </Trigger>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="Width" Value="Auto" />
+                    <Setter Property="Height" Value="8" />
+                    <Setter Property="Template" Value="{StaticResource DarkGlassmorphicHorizontalScrollBarTemplate}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DarkGlassmorphicScrollBarStyle" TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource {x:Type ScrollBar}}" />
+
+        <Style TargetType="{x:Type ScrollViewer}">
+            <Setter Property="OverridesDefaultStyle" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
         <!-- Modern Dark Glassmorphic ToolTip Style (Overrides default Windows Aero white box!) -->
         <Style TargetType="ToolTip">
             <Setter Property="OverridesDefaultStyle" Value="True" />

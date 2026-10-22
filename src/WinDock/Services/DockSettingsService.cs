@@ -278,6 +278,8 @@ public sealed class DockSettingsService : IDockSettingsService
             BarHeightDip = 48.0,
             AutoHideNativeTaskbar = true,
             AutoHideOnFullscreen = true,
+            ShowStartButton = true,
+            ShowSystemTrayCluster = true,
             Theme = PredefinedThemes[0],
             SelectedThemeId = "dark-modern",
             SelectedAccentHex = "#007ACC",

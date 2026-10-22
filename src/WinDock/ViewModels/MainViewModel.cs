@@ -519,6 +519,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private double _barHeightDip = DefaultBarHeight;
     private bool _areWidgetsVisible = false; // Default clean: widgets OFF on startup
     private bool _isFullscreenActive = false;
+    private bool _showStartButton = true;
+    private bool _showSystemTrayCluster = true;
 
     private string _currentTimeText = DateTime.Now.ToString("HH:mm");
     private string _currentSecondsText = DateTime.Now.ToString("ss");
@@ -646,6 +648,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand RefreshAllCommand { get; }
     public ICommand ExitAppCommand { get; }
     public ICommand OpenCustomizationCommand { get; }
+    public ICommand OpenStartMenuCommand { get; }
+    public ICommand OpenQuickSettingsCommand { get; }
+    public ICommand OpenNotificationsCommand { get; }
+    public ICommand OpenVolumeMixerCommand { get; }
+    public ICommand OpenNetworkSettingsCommand { get; }
+    public ICommand ToggleStartButtonCommand { get; }
+    public ICommand ToggleSystemTrayClusterCommand { get; }
 
     public ICommand AddCustomShortcutCommand { get; }
     public ICommand RemoveShortcutCommand { get; }
@@ -740,6 +749,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         RefreshAllCommand = new RelayCommand(() => _ = RefreshTelemetryAsync());
         ExitAppCommand = new RelayCommand(ExecuteExitApp);
         OpenCustomizationCommand = new RelayCommand(() => OpenCustomizationRequested?.Invoke());
+        OpenStartMenuCommand = new RelayCommand(ExecuteOpenStartMenu);
+        OpenQuickSettingsCommand = new RelayCommand(ExecuteOpenQuickSettings);
+        OpenNotificationsCommand = new RelayCommand(ExecuteOpenNotifications);
+        OpenVolumeMixerCommand = new RelayCommand(ExecuteOpenVolumeMixer);
+        OpenNetworkSettingsCommand = new RelayCommand(ExecuteOpenNetworkSettings);
+        ToggleStartButtonCommand = new RelayCommand(ExecuteToggleStartButton);
+        ToggleSystemTrayClusterCommand = new RelayCommand(ExecuteToggleSystemTrayCluster);
 
         // Customization Commands
         AddCustomShortcutCommand = new RelayCommand(ExecuteAddCustomShortcut);
@@ -1217,6 +1233,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
             // 2. AreWidgetsVisible
             AreWidgetsVisible = settings.AreDesktopWidgetsVisible;
+            _showStartButton = settings.ShowStartButton;
+            OnPropertyChanged(nameof(ShowStartButton));
+            _showSystemTrayCluster = settings.ShowSystemTrayCluster;
+            OnPropertyChanged(nameof(ShowSystemTrayCluster));
 
             // 3. Theme & Accent
             if (!string.IsNullOrWhiteSpace(settings.SelectedThemeId))
@@ -1308,6 +1328,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             settings.Edge = CurrentEdge;
             settings.BarHeightDip = BarHeightDip;
             settings.AreDesktopWidgetsVisible = AreWidgetsVisible;
+            settings.ShowStartButton = ShowStartButton;
+            settings.ShowSystemTrayCluster = ShowSystemTrayCluster;
             settings.SelectedThemeId = CurrentTheme?.Id ?? "dark-modern";
             settings.SelectedAccentHex = CurrentAccent?.ColorHex ?? "#007ACC";
 
@@ -1451,6 +1473,34 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public bool IsNativeTaskbarHidden => _nativeTaskbarService.IsNativeTaskbarHidden;
     public string NativeTaskbarStatusText => IsNativeTaskbarHidden ? "WinBar Oculta" : "WinBar Visível";
 
+    public bool ShowStartButton
+    {
+        get => _showStartButton;
+        set
+        {
+            if (_showStartButton != value)
+            {
+                _showStartButton = value;
+                OnPropertyChanged();
+                SaveAllCustomizationsToDisk();
+            }
+        }
+    }
+
+    public bool ShowSystemTrayCluster
+    {
+        get => _showSystemTrayCluster;
+        set
+        {
+            if (_showSystemTrayCluster != value)
+            {
+                _showSystemTrayCluster = value;
+                OnPropertyChanged();
+                SaveAllCustomizationsToDisk();
+            }
+        }
+    }
+
     public string CurrentTimeText
     {
         get => _currentTimeText;
@@ -1514,11 +1564,21 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(MediaTitle));
             OnPropertyChanged(nameof(MediaSourceBadge));
             OnPropertyChanged(nameof(MediaSubTitle));
+            OnPropertyChanged(nameof(MediaThumbnail));
+            OnPropertyChanged(nameof(MediaArtist));
+            OnPropertyChanged(nameof(MediaProgressPercent));
+            OnPropertyChanged(nameof(IsMediaPlaying));
         }
     }
 
     public bool HasActiveMedia => CurrentMedia.HasActiveMedia;
     public bool IsYouTubeActive => CurrentMedia.IsYouTube;
+    public bool IsMediaPlaying => CurrentMedia.IsPlaying;
+    public ImageSource? MediaThumbnail => CurrentMedia.Thumbnail;
+    public string MediaArtist => !string.IsNullOrWhiteSpace(CurrentMedia.Artist)
+        ? CurrentMedia.Artist
+        : (!string.IsNullOrWhiteSpace(CurrentMedia.SourceApp) ? CurrentMedia.SourceApp : string.Empty);
+    public double MediaProgressPercent => CurrentMedia.ProgressPercent;
     public string MediaTitle => string.IsNullOrWhiteSpace(CurrentMedia.Title)
         ? "Nenhuma mídia ativa"
         : CurrentMedia.Title;
@@ -1526,7 +1586,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ? "YOUTUBE"
         : (!string.IsNullOrWhiteSpace(CurrentMedia.SourceApp) ? CurrentMedia.SourceApp.ToUpperInvariant() : "MÍDIA");
     public string MediaSubTitle => CurrentMedia.HasActiveMedia
-        ? (CurrentMedia.IsYouTube ? "Reproduzindo no YouTube" : $"Fonte: {CurrentMedia.SourceApp}")
+        ? (!string.IsNullOrWhiteSpace(MediaArtist) ? MediaArtist : (CurrentMedia.IsYouTube ? "Reproduzindo no YouTube" : $"Fonte: {CurrentMedia.SourceApp}"))
         : "Use os controles ou abra o YouTube";
 
     public SteamStatus SteamStatus
@@ -2962,6 +3022,41 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private void ExecuteToggleBarEdge()
     {
         CurrentEdge = CurrentEdge == BarEdge.Top ? BarEdge.Bottom : BarEdge.Top;
+    }
+
+    private static void ExecuteOpenStartMenu()
+    {
+        Win32Interop.ToggleStartMenu();
+    }
+
+    private static void ExecuteOpenQuickSettings()
+    {
+        Win32Interop.OpenQuickSettings();
+    }
+
+    private static void ExecuteOpenNotifications()
+    {
+        Win32Interop.OpenNotifications();
+    }
+
+    private static void ExecuteOpenVolumeMixer()
+    {
+        Win32Interop.OpenVolumeMixer();
+    }
+
+    private static void ExecuteOpenNetworkSettings()
+    {
+        Win32Interop.OpenNetworkSettings();
+    }
+
+    private void ExecuteToggleStartButton()
+    {
+        ShowStartButton = !ShowStartButton;
+    }
+
+    private void ExecuteToggleSystemTrayCluster()
+    {
+        ShowSystemTrayCluster = !ShowSystemTrayCluster;
     }
 
     private void ExecuteToggleWidgets()

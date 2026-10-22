@@ -40,47 +40,6 @@ public sealed class DockTheme
     public double Opacity { get; set; } = 0.95;
 }
 
-public sealed class DockSettings
-{
-    public BarEdge Edge { get; set; } = BarEdge.Bottom;
-    public double BarHeightDip { get; set; } = 48.0;
-    public bool AutoHideNativeTaskbar { get; set; } = true;
-    public bool AutoHideOnFullscreen { get; set; } = true;
-    public DockTheme Theme { get; set; } = new();
-    public string SelectedThemeId { get; set; } = "dark-modern";
-    public string SelectedAccentHex { get; set; } = "#007ACC";
-    public bool AreDesktopWidgetsVisible { get; set; } = true;
-    public List<string> DockOrderKeys { get; set; } = new();
-    public List<DockShortcut> PinnedShortcuts { get; set; } = new();
-    public List<string> EnabledWidgets { get; set; } = new()
-    {
-        "hardware",
-        "media",
-        "steam-jump-in",
-        "discord"
-    };
-    public Dictionary<string, WidgetSize> WidgetSizes { get; set; } = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["hardware"] = WidgetSize.Size1x2,
-        ["media"] = WidgetSize.Size1x2,
-        ["steam-jump-in"] = WidgetSize.Size1x2,
-        ["steam-recent"] = WidgetSize.Size1x3,
-        ["steam-downloads"] = WidgetSize.Size1x2,
-        ["steam-now-playing"] = WidgetSize.Size1x2,
-        ["steam-hub"] = WidgetSize.Size1x1,
-        ["steam-storage"] = WidgetSize.Size1x2,
-        ["discord"] = WidgetSize.Size1x1,
-        ["discord-voice"] = WidgetSize.Size1x2,
-        ["discord-controls"] = WidgetSize.Size1x2,
-        ["discord-mentions"] = WidgetSize.Size1x1,
-        ["discord-channel"] = WidgetSize.Size1x2,
-        ["discord-hub"] = WidgetSize.Size1x2,
-        ["ai"] = WidgetSize.Size1x1,
-        ["clock"] = WidgetSize.Size1x2
-    };
-    public bool AreDesktopWidgetsPinned { get; set; } = true;
-}
-
 public sealed class AppWindowInfo
 {
     public IntPtr Handle { get; init; }
@@ -101,12 +60,72 @@ public sealed class HardwareMetrics
     public double RamTotalGb { get; init; }
 }
 
+public sealed class MediaPlaybackStatus
+{
+    public string SessionId { get; init; } = string.Empty;
+    public string Title { get; init; } = "Nenhuma mídia ativa";
+    public string Artist { get; init; } = string.Empty;
+    public string AlbumTitle { get; init; } = string.Empty;
+    public string SourceApp { get; init; } = string.Empty;
+    public bool HasActiveMedia { get; init; }
+    public bool IsYouTube { get; init; }
+    public string PlaybackStatus { get; init; } = "Stopped";
+    public bool IsPlaying { get; init; }
+    public TimeSpan Position { get; init; } = TimeSpan.Zero;
+    public TimeSpan Duration { get; init; } = TimeSpan.Zero;
+    public ImageSource? Thumbnail { get; init; }
+    public double ProgressPercent => Duration.TotalMilliseconds > 0
+        ? Math.Clamp(Position.TotalMilliseconds * 100.0 / Duration.TotalMilliseconds, 0.0, 100.0)
+        : 0.0;
+    public string PositionFormatted => Position.TotalHours >= 1.0
+        ? Position.ToString(@"h\:mm\:ss")
+        : Position.ToString(@"mm\:ss");
+    public string DurationFormatted => Duration.TotalHours >= 1.0
+        ? Duration.ToString(@"h\:mm\:ss")
+        : Duration.ToString(@"mm\:ss");
+}
+
 public sealed class MediaInfo
 {
     public bool HasActiveMedia { get; init; }
     public string Title { get; init; } = "Nenhuma mídia ativa";
+    public string Artist { get; init; } = string.Empty;
     public string SourceApp { get; init; } = string.Empty;
     public bool IsYouTube { get; init; }
+    public string PlaybackStatus { get; init; } = "Stopped";
+    public bool IsPlaying { get; init; }
+    public TimeSpan Position { get; init; } = TimeSpan.Zero;
+    public TimeSpan Duration { get; init; } = TimeSpan.Zero;
+    public ImageSource? Thumbnail { get; init; }
+    public string SessionId { get; init; } = string.Empty;
+    public double ProgressPercent => Duration.TotalMilliseconds > 0
+        ? Math.Clamp(Position.TotalMilliseconds * 100.0 / Duration.TotalMilliseconds, 0.0, 100.0)
+        : 0.0;
+    public string PositionFormatted => Position.TotalHours >= 1.0
+        ? Position.ToString(@"h\:mm\:ss")
+        : Position.ToString(@"mm\:ss");
+    public string DurationFormatted => Duration.TotalHours >= 1.0
+        ? Duration.ToString(@"h\:mm\:ss")
+        : Duration.ToString(@"mm\:ss");
+}
+
+public sealed class SystemTrayStatus
+{
+    public bool HasBattery { get; init; }
+    public int BatteryPercent { get; init; } = 100;
+    public bool IsCharging { get; init; }
+    public string BatteryStatusSummary { get; init; } = "100%";
+    public string PowerLineStatus { get; init; } = "Online";
+
+    public bool IsNetworkConnected { get; init; }
+    public bool IsEthernet { get; init; }
+    public bool IsWifi { get; init; }
+    public string NetworkName { get; init; } = string.Empty;
+    public string NetworkStatusSummary { get; init; } = "Conectado";
+
+    public int MasterVolumePercent { get; init; } = 50;
+    public bool IsMasterMuted { get; init; }
+    public string VolumeStatusSummary { get; init; } = "50%";
 }
 
 public sealed class SteamGameInfo

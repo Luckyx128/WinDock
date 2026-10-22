@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -16,8 +17,10 @@ public sealed class DiscordStatusService : IDiscordStatusService
 
     private const byte VK_SHIFT = 0x10;
     private const byte VK_CONTROL = 0x11;
+    private const byte VK_MENU = 0x12; // Alt
     private const byte VK_M = 0x4D;
     private const byte VK_D = 0x44;
+    private const byte VK_H = 0x48;
     private const uint KEYEVENTF_KEYUP = 0x0002;
 
     private static readonly string[] DiscordProcessNames =
@@ -31,13 +34,36 @@ public sealed class DiscordStatusService : IDiscordStatusService
     private bool _isMuted;
     private bool _isDeafened;
     private ImageSource? _cachedClientIcon;
+    private DateTime? _voiceCallStartTimeUtc;
 
     public DiscordStatus GetStatus()
     {
         bool isIpcAvailable = CheckDiscordIpcPipe();
         (bool isRunning, IntPtr mainWindowHandle, string windowTitle) = FindDiscordProcessAndWindow();
 
-        (bool isInVoice, TimeSpan duration, string durationFormatted) = CheckMicrophoneVoiceCall();
+        // 1. Sincronizar mute real do microfone (CoreAudio EndpointVolume)
+        try
+        {
+            var captureEndpoint = CoreAudioHelper.GetDefaultEndpointVolume(EDataFlow.eCapture, ERole.eCommunications)
+                ?? CoreAudioHelper.GetDefaultEndpointVolume(EDataFlow.eCapture, ERole.eConsole);
+            if (captureEndpoint != null && captureEndpoint.GetMute(out bool micMuted) == 0)
+            {
+                _isMuted = micMuted;
+            }
+        }
+        catch
+        {
+        }
+
+        // 2. Sincronizar deafen real do Discord (mixer SimpleAudioVolume)
+        bool? discordRenderMuted = TryGetDiscordRenderMute();
+        if (discordRenderMuted.HasValue)
+        {
+            _isDeafened = discordRenderMuted.Value;
+        }
+
+        // 3. Detecção confiável de chamada: microfone CoreAudio + Registry ConsentStore
+        (bool isInVoice, TimeSpan duration, string durationFormatted) = CheckVoiceCallStatus();
         (int mentionCount, string channelName, string serverName, string serverInitials) = ParseWindowTitle(windowTitle);
 
         if (!isRunning && !isIpcAvailable && !isInVoice)
@@ -131,19 +157,100 @@ public sealed class DiscordStatusService : IDiscordStatusService
 
     public void ToggleMute()
     {
-        _isMuted = !_isMuted;
+        try
+        {
+            var captureEndpoint = CoreAudioHelper.GetDefaultEndpointVolume(EDataFlow.eCapture, ERole.eCommunications)
+                ?? CoreAudioHelper.GetDefaultEndpointVolume(EDataFlow.eCapture, ERole.eConsole);
+
+            if (captureEndpoint != null && captureEndpoint.GetMute(out bool isMuted) == 0)
+            {
+                var empty = Guid.Empty;
+                captureEndpoint.SetMute(!isMuted, ref empty);
+                _isMuted = !isMuted;
+            }
+            else
+            {
+                _isMuted = !_isMuted;
+            }
+        }
+        catch
+        {
+            _isMuted = !_isMuted;
+        }
+
+        // Também dispara o atalho global do Discord (Ctrl + Shift + M)
         SendGlobalDiscordKeyCombination(VK_M);
+    }
+
+    public void SetMicrophoneMute(bool isMuted)
+    {
+        try
+        {
+            var captureEndpoint = CoreAudioHelper.GetDefaultEndpointVolume(EDataFlow.eCapture, ERole.eCommunications)
+                ?? CoreAudioHelper.GetDefaultEndpointVolume(EDataFlow.eCapture, ERole.eConsole);
+
+            if (captureEndpoint != null)
+            {
+                var empty = Guid.Empty;
+                captureEndpoint.SetMute(isMuted, ref empty);
+            }
+        }
+        catch
+        {
+        }
+
+        if (_isMuted != isMuted)
+        {
+            SendGlobalDiscordKeyCombination(VK_M);
+        }
+
+        _isMuted = isMuted;
     }
 
     public void ToggleDeafen()
     {
-        _isDeafened = !_isDeafened;
+        bool? currentMuted = TryGetDiscordRenderMute();
+        bool nextMute = currentMuted.HasValue ? !currentMuted.Value : !_isDeafened;
+
+        TrySetDiscordRenderMute(nextMute);
+        _isDeafened = nextMute;
+
+        // Dispara o atalho global do Discord (Ctrl + Shift + D) para manter a UI do Discord em sincronia
         SendGlobalDiscordKeyCombination(VK_D);
+    }
+
+    public void SetDiscordDeafen(bool isDeafened)
+    {
+        TrySetDiscordRenderMute(isDeafened);
+
+        if (_isDeafened != isDeafened)
+        {
+            SendGlobalDiscordKeyCombination(VK_D);
+        }
+
+        _isDeafened = isDeafened;
     }
 
     public void DisconnectVoice()
     {
-        FocusOrLaunchDiscord();
+        try
+        {
+            // 1. Traz a janela do Discord para o foco para garantir recepção de comando
+            FocusOrLaunchDiscord();
+
+            // 2. Mapeia comandos e atalhos comuns de desconexão (Ctrl+Shift+H ou Ctrl+Shift+Alt+D)
+            SendKeyCombination(VK_CONTROL, VK_SHIFT, VK_H);
+            SendKeyCombination(VK_CONTROL, VK_SHIFT, VK_MENU, VK_D);
+
+            // 3. Como garantia de privacidade, aciona mute/deafen se ainda estiver ativo
+            if (CheckVoiceCallStatus().IsInVoice)
+            {
+                SetMicrophoneMute(true);
+            }
+        }
+        catch
+        {
+        }
     }
 
     public void OpenDMs()
@@ -196,13 +303,94 @@ public sealed class DiscordStatusService : IDiscordStatusService
         }
     }
 
-    private static (bool IsInVoice, TimeSpan Duration, string DurationFormatted) CheckMicrophoneVoiceCall()
+    private static void SendKeyCombination(params byte[] keys)
+    {
+        try
+        {
+            foreach (byte key in keys)
+            {
+                keybd_event(key, 0, 0, UIntPtr.Zero);
+            }
+            for (int i = keys.Length - 1; i >= 0; i--)
+            {
+                keybd_event(keys[i], 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private (bool IsInVoice, TimeSpan Duration, string DurationFormatted) CheckVoiceCallStatus()
+    {
+        bool hasCaptureSession = HasActiveDiscordMicrophoneCaptureSession();
+        (bool regInVoice, DateTime? regStart) = CheckRegistryMicrophoneConsent();
+
+        bool isInVoice = hasCaptureSession || regInVoice;
+
+        if (isInVoice)
+        {
+            if (!_voiceCallStartTimeUtc.HasValue)
+            {
+                _voiceCallStartTimeUtc = regStart ?? DateTime.UtcNow;
+            }
+
+            TimeSpan duration = DateTime.UtcNow - _voiceCallStartTimeUtc.Value;
+            if (duration < TimeSpan.Zero) duration = TimeSpan.Zero;
+            string formatted = duration.TotalHours >= 1.0
+                ? duration.ToString(@"h\:mm\:ss")
+                : duration.ToString(@"mm\:ss");
+
+            return (true, duration, formatted);
+        }
+
+        _voiceCallStartTimeUtc = null;
+        return (false, TimeSpan.Zero, "00:00");
+    }
+
+    private static bool HasActiveDiscordMicrophoneCaptureSession()
+    {
+        try
+        {
+            var sessionManager = CoreAudioHelper.GetDefaultAudioSessionManager(EDataFlow.eCapture, ERole.eCommunications)
+                ?? CoreAudioHelper.GetDefaultAudioSessionManager(EDataFlow.eCapture, ERole.eConsole);
+
+            if (sessionManager != null && sessionManager.GetSessionEnumerator(out var sessionEnum) == 0 && sessionEnum != null)
+            {
+                if (sessionEnum.GetCount(out int count) == 0 && count > 0)
+                {
+                    var discordPids = GetDiscordPids();
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (sessionEnum.GetSession(i, out var sessionCtrl) == 0 && sessionCtrl is IAudioSessionControl2 ctrl2)
+                        {
+                            ctrl2.GetProcessId(out uint pid);
+                            if (discordPids.Contains((int)pid))
+                            {
+                                if (ctrl2.GetState(out var state) == 0 && state == AudioSessionState.AudioSessionStateActive)
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return false;
+    }
+
+    private static (bool IsActive, DateTime? StartTime) CheckRegistryMicrophoneConsent()
     {
         try
         {
             using var rootKey = Registry.CurrentUser.OpenSubKey(
                 @"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\NonPackaged");
-            if (rootKey == null) return (false, TimeSpan.Zero, "00:00");
+            if (rootKey == null) return (false, null);
 
             long latestActiveStart = 0;
             foreach (string subKeyName in rootKey.GetSubKeyNames())
@@ -231,12 +419,7 @@ public sealed class DiscordStatusService : IDiscordStatusService
             if (latestActiveStart > 0)
             {
                 DateTime startTime = DateTime.FromFileTimeUtc(latestActiveStart);
-                TimeSpan duration = DateTime.UtcNow - startTime;
-                if (duration < TimeSpan.Zero) duration = TimeSpan.Zero;
-                string formatted = duration.TotalHours >= 1.0
-                    ? duration.ToString(@"h\:mm\:ss")
-                    : duration.ToString(@"mm\:ss");
-                return (true, duration, formatted);
+                return (true, startTime);
             }
         }
         catch
@@ -244,7 +427,98 @@ public sealed class DiscordStatusService : IDiscordStatusService
             // Suppress registry inspection errors
         }
 
-        return (false, TimeSpan.Zero, "00:00");
+        return (false, null);
+    }
+
+    private static bool TrySetDiscordRenderMute(bool mute)
+    {
+        bool applied = false;
+        try
+        {
+            var sessionManager = CoreAudioHelper.GetDefaultAudioSessionManager(EDataFlow.eRender, ERole.eMultimedia)
+                ?? CoreAudioHelper.GetDefaultAudioSessionManager(EDataFlow.eRender, ERole.eConsole);
+
+            if (sessionManager != null && sessionManager.GetSessionEnumerator(out var sessionEnum) == 0 && sessionEnum != null)
+            {
+                if (sessionEnum.GetCount(out int count) == 0 && count > 0)
+                {
+                    var discordPids = GetDiscordPids();
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (sessionEnum.GetSession(i, out var sessionCtrl) == 0 && sessionCtrl is IAudioSessionControl2 ctrl2)
+                        {
+                            ctrl2.GetProcessId(out uint pid);
+                            if (discordPids.Contains((int)pid) && sessionCtrl is ISimpleAudioVolume simpleVol)
+                            {
+                                var empty = Guid.Empty;
+                                simpleVol.SetMute(mute, ref empty);
+                                applied = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+        return applied;
+    }
+
+    private static bool? TryGetDiscordRenderMute()
+    {
+        try
+        {
+            var sessionManager = CoreAudioHelper.GetDefaultAudioSessionManager(EDataFlow.eRender, ERole.eMultimedia)
+                ?? CoreAudioHelper.GetDefaultAudioSessionManager(EDataFlow.eRender, ERole.eConsole);
+
+            if (sessionManager != null && sessionManager.GetSessionEnumerator(out var sessionEnum) == 0 && sessionEnum != null)
+            {
+                if (sessionEnum.GetCount(out int count) == 0 && count > 0)
+                {
+                    var discordPids = GetDiscordPids();
+                    for (int i = 0; i < count; i++)
+                    {
+                        if (sessionEnum.GetSession(i, out var sessionCtrl) == 0 && sessionCtrl is IAudioSessionControl2 ctrl2)
+                        {
+                            ctrl2.GetProcessId(out uint pid);
+                            if (discordPids.Contains((int)pid) && sessionCtrl is ISimpleAudioVolume simpleVol)
+                            {
+                                if (simpleVol.GetMute(out bool muted) == 0)
+                                {
+                                    return muted;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+        return null;
+    }
+
+    private static HashSet<int> GetDiscordPids()
+    {
+        var pids = new HashSet<int>();
+        foreach (string procName in DiscordProcessNames)
+        {
+            try
+            {
+                var procs = Process.GetProcessesByName(procName);
+                foreach (var p in procs)
+                {
+                    pids.Add(p.Id);
+                    p.Dispose();
+                }
+            }
+            catch
+            {
+            }
+        }
+        return pids;
     }
 
     private static (int MentionCount, string ChannelName, string ServerName, string ServerInitials) ParseWindowTitle(string windowTitle)

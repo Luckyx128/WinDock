@@ -438,34 +438,128 @@
                                 </Grid>
                             </Grid>
 
-                            <!-- MEDIA PREVIEW -->
+                            <!-- MEDIA PREVIEW (Inspirado no card 'Fim de Tarde' com Thumbnail real/gradiente, título, artista, mini barra e botões) -->
                             <Grid x:Name="MediaPreview" Visibility="Collapsed">
+                                <!-- 1x1: Miniatura com badge de play/pause -->
                                 <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
-                                    <Path Data="M4 2v12l9-6z M15 2h2v12h-2z"
-                                          Stretch="Uniform" Width="12" Height="12"
-                                          Fill="{DynamicResource AccentCyanBrush}"
-                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <Border Width="24" Height="24" CornerRadius="6" ClipToBounds="True"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#FF833A" Offset="0.0" />
+                                                <GradientStop Color="#E63956" Offset="0.5" />
+                                                <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Grid>
+                                            <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Border Width="14" Height="14" CornerRadius="7"
+                                                    Background="#88080C14" BorderBrush="#33FFFFFF" BorderThickness="0.6"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Path Data="M4 2v10l7-5z" Stretch="Uniform" Width="6" Height="6" Fill="#FFFFFF" Margin="1,0,0,0" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
                                 </Grid>
-                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
-                                              Width="13" Height="9" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" Margin="0,0,4,0" />
-                                        <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                              Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,4,0" />
-                                        <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                              Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
+                                <!-- 1x2: Thumbnail 6px à esquerda + Título/Canal + Mini Barra de Progresso + Play/Pause -->
+                                <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}" Margin="3,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Thumbnail com CornerRadius 6 -->
+                                    <Border Grid.Column="0" Width="22" Height="22" CornerRadius="6" ClipToBounds="True"
+                                            Margin="1,0,4,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#FF833A" Offset="0.0" />
+                                                <GradientStop Color="#E63956" Offset="0.5" />
+                                                <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Grid>
+                                            <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                                  Stretch="Uniform" Width="8" Height="8" Fill="#80FFFFFF"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Título, Artista/Canal e Mini Barra de Progresso -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,2,0">
+                                        <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="7.8" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="6.5"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,-1,0,1" />
+                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="1.8" Value="48"
+                                                     Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
                                     </StackPanel>
+
+                                    <!-- Botão Compacto Play/Pause -->
+                                    <Path Grid.Column="2" Data="M3 2v10l7-5z M12 2h2v10h-2z"
+                                          Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}"
+                                          VerticalAlignment="Center" Margin="2,0,1,0" />
                                 </Grid>
-                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <Path Data="M14 12V2L8 7zm-6 0V2L2 7zm-6 0V2H0v10z"
-                                              Width="9" Height="9" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,4,0" />
+                                <!-- 1x3: Thumbnail à esquerda + Título/Canal + Mini Barra + Controles Harmonizados -->
+                                <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}" Margin="3,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Thumbnail real com CornerRadius 6 -->
+                                    <Border Grid.Column="0" Width="24" Height="24" CornerRadius="6" ClipToBounds="True"
+                                            Margin="2,0,5,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#FF833A" Offset="0.0" />
+                                                <GradientStop Color="#E63956" Offset="0.5" />
+                                                <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Grid>
+                                            <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                                  Stretch="Uniform" Width="9" Height="9" Fill="#80FFFFFF"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Título, Artista/Canal e Mini Barra de Progresso Horizontal -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,3,0">
+                                        <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="8.2" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   FontSize="6.8"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,-1,0,2" />
+                                        <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="2" Value="52"
+                                                     Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
+                                    </StackPanel>
+
+                                    <!-- Mini Controles Prev / Play / Next -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="2,0,1,0">
+                                        <Path Data="M14 2v10l-6-5z M8 2v10l-6-5z M2 2h-2v10h2z"
+                                              Width="7" Height="7" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,3,0" />
                                         <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                              Width="10" Height="10" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,4,0" />
+                                              Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" Margin="0,0,3,0" />
                                         <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                              Width="9" Height="9" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" Margin="0,0,5,0" />
-                                        <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
-                                              Width="13" Height="9" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
+                                              Width="7" Height="7" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
                                     </StackPanel>
                                 </Grid>
                             </Grid>
@@ -2406,6 +2500,44 @@
                                                     VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding WidgetsToggleText}" FontSize="11" />
                                             </Button>
+                                        </Grid>
+
+                                        <!-- Windows 11 Start Button Toggle -->
+                                        <Grid Margin="0,4,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Botão Iniciar do Windows 11" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                <TextBlock Text="Exibe o botão de início com logotipo clássico/fluente na extrema esquerda da Dock."
+                                                           FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </StackPanel>
+
+                                            <CheckBox Grid.Column="1"
+                                                      Style="{StaticResource ModernToggleSwitchStyle}"
+                                                      IsChecked="{Binding ShowStartButton}"
+                                                      VerticalAlignment="Center" />
+                                        </Grid>
+
+                                        <!-- Quick Settings Cluster Toggle -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Cluster Quick Settings (Bandeja do Sistema)" FontSize="11.5" FontWeight="Medium" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                <TextBlock Text="Exibe ícones rápidos de Bateria, Conexão de Rede e Som na extrema direita da barra."
+                                                           FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </StackPanel>
+
+                                            <CheckBox Grid.Column="1"
+                                                      Style="{StaticResource ModernToggleSwitchStyle}"
+                                                      IsChecked="{Binding ShowSystemTrayCluster}"
+                                                      VerticalAlignment="Center" />
                                         </Grid>
 
                                     </StackPanel>

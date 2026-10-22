@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -43,6 +44,10 @@ public static class Win32Interop
     public const uint LSFW_UNLOCK = 2;
     public const byte VK_MENU = 0x12;
     public const uint KEYEVENTF_KEYUP = 0x0002;
+    public const byte VK_LWIN = 0x5B;
+    public const byte VK_RWIN = 0x5C;
+    public const byte VK_A = 0x41;
+    public const byte VK_N = 0x4E;
 
     // Extended Window Styles
     public const int WS_EX_TOOLWINDOW = 0x00000080;
@@ -322,4 +327,91 @@ public static class Win32Interop
 
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern bool CloseHandle(IntPtr hObject);
+
+    /// <summary>
+    /// Opens or toggles the native Windows Start Menu by simulating the Windows key (VK_LWIN).
+    /// </summary>
+    public static void ToggleStartMenu()
+    {
+        keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
+        keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+    }
+
+    /// <summary>
+    /// Opens or toggles the native Windows Start Menu (alias for ToggleStartMenu).
+    /// </summary>
+    public static void OpenStartMenu() => ToggleStartMenu();
+
+    /// <summary>
+    /// Simulates pressing and releasing a key combination (e.g. Win + Key).
+    /// </summary>
+    public static void SimulateKeyCombination(byte modifierVk, byte keyVk)
+    {
+        keybd_event(modifierVk, 0, 0, UIntPtr.Zero);
+        keybd_event(keyVk, 0, 0, UIntPtr.Zero);
+        keybd_event(keyVk, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        keybd_event(modifierVk, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+    }
+
+    /// <summary>
+    /// Opens the Windows 11 Quick Settings flyout (Win + A: Network, Volume, Brightness).
+    /// </summary>
+    public static void OpenQuickSettings()
+    {
+        SimulateKeyCombination(VK_LWIN, VK_A);
+    }
+
+    /// <summary>
+    /// Opens the Windows 11 Notifications & Calendar flyout (Win + N).
+    /// </summary>
+    public static void OpenNotifications()
+    {
+        SimulateKeyCombination(VK_LWIN, VK_N);
+    }
+
+    /// <summary>
+    /// Opens the Windows Volume Mixer (sndvol.exe with fallback to ms-settings:apps-volume).
+    /// </summary>
+    public static void OpenVolumeMixer()
+    {
+        try
+        {
+            using var proc = Process.Start(new ProcessStartInfo("sndvol.exe")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            try
+            {
+                using var proc = Process.Start(new ProcessStartInfo("ms-settings:apps-volume")
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Ignore shell launch failure
+            }
+        }
+    }
+
+    /// <summary>
+    /// Opens Windows Network Settings (ms-settings:network).
+    /// </summary>
+    public static void OpenNetworkSettings()
+    {
+        try
+        {
+            using var proc = Process.Start(new ProcessStartInfo("ms-settings:network")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Ignore shell launch failure
+        }
+    }
 }

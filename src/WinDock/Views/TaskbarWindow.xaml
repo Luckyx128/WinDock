@@ -84,7 +84,7 @@
             </Setter>
         </Style>
 
-        <!-- 1x1 Standard Icon Slot Button Style (40x40) -->
+        <!-- 1x1 Standard Icon Slot Button Style (40x40) with smooth 120ms hover scale -->
         <Style x:Key="DockIconSlotStyle" TargetType="Button">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="38" />
@@ -103,12 +103,56 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="10"
-                                Padding="2">
+                                Padding="2"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="IconSlotScale" ScaleX="1.0" ScaleY="1.0" />
+                            </Border.RenderTransform>
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="IconSlotScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.06" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="IconSlotScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.06" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="IconSlotScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.0" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="IconSlotScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.0" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                                 <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
                                 <Setter TargetName="PillBorder" Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
                             </Trigger>
@@ -122,7 +166,116 @@
             </Setter>
         </Style>
 
-        <!-- Unified 1x1 Dock App Slot Style (40x40) with real icon and active/focus indicator bar -->
+        <!-- Windows 11 Start Button Style (38x38) with soft blue tint and smooth 120ms hover scale -->
+        <Style x:Key="Windows11StartButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Background" Value="#141C2A" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="StartBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="StartScale" ScaleX="1.0" ScaleY="1.0" />
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="StartScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.06" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="StartScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.06" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="StartScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.0" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="StartScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.0" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                                <Setter TargetName="StartBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
+                                <Setter TargetName="StartBorder" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="StartBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                                <Setter TargetName="StartBorder" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Quick Settings Cluster Item Button Style -->
+        <Style x:Key="QuickSettingsItemButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Margin" Value="1,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="QuickBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="QuickBorder" Property="Background" Value="#22FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="QuickBorder" Property="Background" Value="#33FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Unified 1x1 Dock App Slot Style (40x40) with real icon, smooth 120ms hover scale, and pulse focus indicator -->
         <Style x:Key="UnifiedDockAppSlotStyle" TargetType="Button">
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="38" />
@@ -136,7 +289,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
+                        <Grid RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="AppSlotScale" ScaleX="1.0" ScaleY="1.0" />
+                            </Grid.RenderTransform>
+
                             <Border x:Name="CardBorder"
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
@@ -165,8 +322,33 @@
                             <DataTrigger Binding="{Binding IsOpen}" Value="True">
                                 <Setter TargetName="FocusBar" Property="Visibility" Value="Visible" />
                             </DataTrigger>
-                            <!-- If Focused, glowing accent bar and pill highlight -->
+                            <!-- If Focused, glowing accent bar and pill highlight + Subtle Pulse Animation! -->
                             <DataTrigger Binding="{Binding IsFocused}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard x:Name="FocusPulseSb">
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetName="FocusBar"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             From="0.70" To="1.0"
+                                                             Duration="0:0:1.1">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <SineEase EasingMode="EaseInOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="FocusBar"
+                                                             Storyboard.TargetProperty="Width"
+                                                             From="17" To="22"
+                                                             Duration="0:0:1.1">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <SineEase EasingMode="EaseInOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="FocusPulseSb" />
+                                </DataTrigger.ExitActions>
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
                                 <Setter TargetName="FocusBar" Property="Background" Value="{DynamicResource AccentColorBrush}" />
@@ -185,7 +367,48 @@
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource AccentColorBrush}" />
                             </DataTrigger>
+                            <!-- Smooth Hover Transition: 1.0 -> 1.06 with CubicEase in 120ms -->
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="AppSlotScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.06" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="AppSlotScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.06" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="AppSlotScale"
+                                                             Storyboard.TargetProperty="ScaleX"
+                                                             To="1.0" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="AppSlotScale"
+                                                             Storyboard.TargetProperty="ScaleY"
+                                                             To="1.0" Duration="0:0:0.120">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                                 <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
                                 <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
                             </Trigger>
@@ -504,77 +727,161 @@
                         </Grid>
                     </Grid>
 
-                    <!-- MEDIA & YOUTUBE WIDGET -->
+                    <!-- MEDIA & YOUTUBE WIDGET (Inspirado no card 'Fim de Tarde' com Thumbnail real/gradiente, título, artista, mini barra e botões) -->
                     <Grid x:Name="MediaWidgetPanel" Visibility="Collapsed">
-                        <!-- 1x1: Play/Pause vector -->
+                        <!-- 1x1: Thumbnail em miniatura com badge de play/pause ou ícone de mídia -->
                         <Grid Visibility="{Binding IsSize1x1, Converter={StaticResource BoolToVis}}">
                             <Button Style="{StaticResource MiniActionButtonStyle}"
                                     Width="36" Height="34"
                                     Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                     ToolTip="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}">
-                                <Path Data="M4 2v12l9-6z M15 2h2v12h-2z"
-                                      Stretch="Uniform"
-                                      Width="13" Height="13"
-                                      Fill="{DynamicResource AccentCyanBrush}" />
+                                <Border Width="26" Height="26" CornerRadius="6" ClipToBounds="True"
+                                        BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#FF833A" Offset="0.0" />
+                                            <GradientStop Color="#E63956" Offset="0.5" />
+                                            <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <Grid>
+                                        <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <Border Width="15" Height="15" CornerRadius="7.5"
+                                                Background="#88080C14" BorderBrush="#33FFFFFF" BorderThickness="0.6"
+                                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Path Data="M4 2v10l7-5z" Stretch="Uniform" Width="6.5" Height="6.5" Fill="#FFFFFF" Margin="1,0,0,0" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
                             </Button>
                         </Grid>
-                        <!-- 1x2: YouTube + Play/Pause + Next Track -->
-                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="23" Height="26"
-                                        Command="{Binding DataContext.OpenYouTubeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Abrir YouTube">
-                                    <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
-                                          Width="14" Height="10" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
-                                </Button>
-                                <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="23" Height="26" Margin="2,0"
-                                        Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Play / Pause">
-                                    <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" />
-                                </Button>
-                                <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="23" Height="26"
-                                        Command="{Binding DataContext.NextTrackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Próxima Faixa">
-                                    <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
-                                </Button>
+                        <!-- 1x2: Thumbnail real à esquerda + Título/Canal + Mini barra de progresso + Play/Pause harmonizado -->
+                        <Grid Visibility="{Binding IsSize1x2, Converter={StaticResource BoolToVis}}" Margin="2,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Thumbnail com cantos arredondados (CornerRadius 6) -->
+                            <Border Grid.Column="0" Width="24" Height="24" CornerRadius="6" ClipToBounds="True"
+                                    Margin="1,0,4,0" VerticalAlignment="Center" BorderBrush="#25FFFFFF" BorderThickness="0.8">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF833A" Offset="0.0" />
+                                        <GradientStop Color="#E63956" Offset="0.5" />
+                                        <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid>
+                                    <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                    <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                          Stretch="Uniform" Width="9" Height="9" Fill="#80FFFFFF"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Título e Artista/Canal alinhados com TextTrimming + Mini Barra Fina -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,2,0">
+                                <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           FontSize="8" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           FontSize="6.8"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="0,-1,0,1" />
+                                <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="2" Value="48"
+                                             Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
                             </StackPanel>
+
+                            <!-- Botão Compacto Play/Pause -->
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource MiniActionButtonStyle}"
+                                    Width="18" Height="22"
+                                    Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    ToolTip="Play / Pause"
+                                    VerticalAlignment="Center">
+                                <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
+                                      Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" />
+                            </Button>
                         </Grid>
-                        <!-- 1x3: Prev + Play/Pause + Next + YouTube -->
-                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- 1x3: Thumbnail real à esquerda + Título/Canal + Mini barra de progresso + Controles Prev/Play/Next/YouTube -->
+                        <Grid Visibility="{Binding IsSize1x3, Converter={StaticResource BoolToVis}}" Margin="3,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Thumbnail real à esquerda (CornerRadius 6) -->
+                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="6" ClipToBounds="True"
+                                    Margin="2,0,5,0" VerticalAlignment="Center" BorderBrush="#30FFFFFF" BorderThickness="0.8">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FF833A" Offset="0.0" />
+                                        <GradientStop Color="#E63956" Offset="0.5" />
+                                        <GradientStop Color="#6C2BD9" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid>
+                                    <Image Source="{Binding DataContext.MediaThumbnail, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" />
+                                    <Path Data="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                          Stretch="Uniform" Width="10" Height="10" Fill="#80FFFFFF"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Título e Artista/Canal alinhados + Mini barra de progresso -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,3,0">
+                                <TextBlock Text="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           FontSize="8.5" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding DataContext.MediaTitle, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                <TextBlock Text="{Binding DataContext.MediaSubTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           FontSize="7.2"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="0,-1,0,2" />
+                                <ProgressBar Style="{StaticResource MiniGaugeStyle}" Height="2" Value="52"
+                                             Foreground="{DynamicResource AccentCyanBrush}" Background="#25FFFFFF" />
+                            </StackPanel>
+
+                            <!-- Botões compactos de Play/Pause/Skip (MiniActionButtonStyle) harmonizados -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="24" Height="26"
+                                        Width="14" Height="22"
                                         Command="{Binding DataContext.PreviousTrackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         ToolTip="Faixa Anterior">
                                     <Path Data="M14 2v10l-6-5z M8 2v10l-6-5z M2 2h-2v10h2z"
-                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
+                                          Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
                                 </Button>
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="24" Height="26" Margin="2,0"
+                                        Width="17" Height="22" Margin="1,0"
                                         Command="{Binding DataContext.PlayPauseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         ToolTip="Play / Pause">
                                     <Path Data="M3 2v10l7-5z M12 2h2v10h-2z"
-                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" />
+                                          Width="9" Height="9" Stretch="Uniform" Fill="{DynamicResource TextPrimaryBrush}" />
                                 </Button>
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="24" Height="26"
+                                        Width="14" Height="22"
                                         Command="{Binding DataContext.NextTrackCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         ToolTip="Próxima Faixa">
                                     <Path Data="M2 2v10l6-5z M8 2v10l6-5z M14 2h2v10h-2z"
-                                          Width="11" Height="11" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
+                                          Width="8" Height="8" Stretch="Uniform" Fill="{DynamicResource TextSecondaryBrush}" />
                                 </Button>
-                                <Border Width="1" Height="14" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.5" />
                                 <Button Style="{StaticResource MiniActionButtonStyle}"
-                                        Width="24" Height="26"
+                                        Width="17" Height="22" Margin="2,0,0,0"
                                         Command="{Binding DataContext.OpenYouTubeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         ToolTip="Abrir YouTube">
                                     <Path Data="M10 15l5-3-5-3v6z M21.5 8c-.2-1-.9-1.8-1.9-2-1.7-.5-8.6-.5-8.6-.5s-6.9 0-8.6.5c-1 .2-1.7 1-1.9 2C0 9.7 0 12 0 12s0 2.3.5 4c.2 1 .9 1.8 1.9 2 1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5c1-.2 1.7-1 1.9-2 .5-1.7.5-4 .5-4s0-2.3-.5-4z"
-                                          Width="14" Height="10" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
+                                          Width="11" Height="8" Stretch="Uniform" Fill="{DynamicResource AccentRedBrush}" />
                                 </Button>
                             </StackPanel>
                         </Grid>
@@ -1812,6 +2119,30 @@
                     <ScaleTransform ScaleX="{Binding DockScale}" ScaleY="{Binding DockScale}" />
                 </StackPanel.LayoutTransform>
 
+                <!-- Requirement (3): Botão Iniciar Windows 11 na extrema esquerda da barra (antes dos apps) -->
+                <Button x:Name="Windows11StartButton"
+                        Style="{StaticResource Windows11StartButtonStyle}"
+                        Command="{Binding OpenStartMenuCommand}"
+                        Visibility="{Binding ShowStartButton, Converter={StaticResource BoolToVis}}"
+                        ToolTip="Iniciar (Windows 11)"
+                        Margin="0,0,3,0">
+                    <Grid Width="20" Height="20">
+                        <!-- Windows 11 Fluent 4-Square Vector Logo -->
+                        <Path Data="M2 2h7.2v7.2H2z M10.8 2H18v7.2h-7.2z M2 10.8h7.2V18H2z M10.8 10.8H18V18h-7.2z"
+                              Stretch="Uniform"
+                              Width="15" Height="15"
+                              Fill="{DynamicResource AccentCyanBrush}">
+                            <Path.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#0078D4" Opacity="0.45" />
+                            </Path.Effect>
+                        </Path>
+                    </Grid>
+                </Button>
+
+                <!-- Separador sutil após o botão Iniciar -->
+                <Border Width="1" Height="18" Background="{DynamicResource BarBorderBrush}" Margin="2,0,4,0" Opacity="0.4"
+                        Visibility="{Binding ShowStartButton, Converter={StaticResource BoolToVis}}" />
+
                 <!-- Requirement (Sprint 6): UNIFIED INTERLEAVED DOCK STRIP (Apps + Widgets freely mixed!) -->
                 <!-- Combines open apps, pinned apps, and modular dock widgets in one freely reorderable horizontal strip -->
                 <ItemsControl x:Name="UnifiedDockItemsControl" ItemsSource="{Binding DockStripItems}">
@@ -1822,7 +2153,7 @@
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
-                <!-- Subtle Separator before settings gear button -->
+                <!-- Separador sutil antes do botão de engrenagem -->
                 <Border Width="1" Height="18" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.4" />
 
                 <!-- Requirement (1): One subtle gear icon button at the end to open CustomizationWindow -->
@@ -1835,6 +2166,67 @@
                           Fill="{DynamicResource TextSecondaryBrush}" />
                 </Button>
 
+                <!-- Separador sutil antes do cluster Quick Settings -->
+                <Border Width="1" Height="18" Background="{DynamicResource BarBorderBrush}" Margin="4,0,2,0" Opacity="0.4"
+                        Visibility="{Binding ShowSystemTrayCluster, Converter={StaticResource BoolToVis}}" />
+
+                <!-- Requirement (3): Quick Settings Cluster na extrema direita da barra (Bateria, Rede, Som) -->
+                <Border x:Name="QuickSettingsCluster"
+                        Height="34"
+                        CornerRadius="9"
+                        Background="#141924"
+                        BorderBrush="{DynamicResource BarBorderBrush}"
+                        BorderThickness="1"
+                        Padding="3,2"
+                        Margin="2,0,0,0"
+                        Visibility="{Binding ShowSystemTrayCluster, Converter={StaticResource BoolToVis}}"
+                        VerticalAlignment="Center">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+                            <Setter Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="1.0" ScaleY="1.0" />
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource PillHoverBrush}" />
+                                    <Setter Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- 1. Bateria (Status de Carga / AC) -->
+                        <Button Style="{StaticResource QuickSettingsItemButtonStyle}"
+                                Command="{Binding OpenQuickSettingsCommand}"
+                                ToolTip="Status da Bateria: Carregado / Energia AC (Clique para abrir Configurações Rápidas)">
+                            <Path Data="M16 8h-1V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-2h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1zm-3 8H4V6h9v10z"
+                                  Stretch="Uniform" Width="13" Height="11"
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
+                        </Button>
+
+                        <!-- 2. Rede (Wi-Fi / Ethernet Conectado) -->
+                        <Button Style="{StaticResource QuickSettingsItemButtonStyle}"
+                                Command="{Binding OpenNetworkSettingsCommand}"
+                                ToolTip="Rede &amp; Internet: Conexão ativa (Clique para abrir Configurações de Rede)">
+                            <Path Data="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4zm0 4c3.34 0 6.39 1.25 8.74 3.31L12 19.9 3.26 11.31A13.4 13.4 0 0 1 12 8z"
+                                  Stretch="Uniform" Width="13" Height="11"
+                                  Fill="{DynamicResource AccentCyanBrush}" />
+                        </Button>
+
+                        <!-- 3. Som (Alto-falante / Áudio) -->
+                        <Button Style="{StaticResource QuickSettingsItemButtonStyle}"
+                                Command="{Binding OpenVolumeMixerCommand}"
+                                ToolTip="Áudio: Mixer de Volume &amp; Dispositivos de Som (Clique para abrir Mixer de Volume)">
+                            <Path Data="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+                                  Stretch="Uniform" Width="13" Height="11"
+                                  Fill="{DynamicResource TextSecondaryBrush}" />
+                        </Button>
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 

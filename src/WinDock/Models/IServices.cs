@@ -54,7 +54,14 @@ public interface IHardwareMonitorService
 public interface IMediaIntegrationService
 {
     MediaInfo GetCurrentMedia();
+    MediaPlaybackStatus GetPlaybackStatus();
+    IReadOnlyList<MediaPlaybackStatus> GetActiveSessions();
+    void SwitchSession(string sessionId);
+    void NextSession();
     void PlayPause();
+    void Play();
+    void Pause();
+    void Stop();
     void NextTrack();
     void PreviousTrack();
 }
@@ -80,4 +87,16 @@ public interface IDiscordStatusService
     void DisconnectVoice();
     void OpenDMs();
     void OpenSettings();
+    void SetMicrophoneMute(bool isMuted);
+    void SetDiscordDeafen(bool isDeafened);
+}
+
+public interface ISystemStatusService
+{
+    SystemTrayStatus GetSystemTrayStatus();
+    void SetMasterVolume(int percent);
+    void ToggleMasterMute();
+    void SetMasterMute(bool isMuted);
+    void VolumeUp(int stepPercent = 2);
+    void VolumeDown(int stepPercent = 2);
 }
