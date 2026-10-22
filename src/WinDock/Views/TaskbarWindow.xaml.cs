@@ -295,6 +295,11 @@ public partial class TaskbarWindow : Window
         else
         {
             ResetDockItemDrag();
+            if (sender is FrameworkElement fe && fe.DataContext is DockAppItem app)
+            {
+                App.LogDiagnostic($"[PreviewMouseUp] Executing ClickCommand for app: {app.Title}");
+                app.ClickCommand?.Execute(null);
+            }
         }
     }
 
@@ -316,7 +321,7 @@ public partial class TaskbarWindow : Window
             _draggedItem.IsDragging = false;
         }
 
-        if (_draggedElement != null && _draggedElement.IsMouseCaptured)
+        if (_isDraggingDockItem && _draggedElement != null && _draggedElement.IsMouseCaptured)
         {
             _draggedElement.ReleaseMouseCapture();
         }
