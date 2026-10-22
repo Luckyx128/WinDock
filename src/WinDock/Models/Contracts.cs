@@ -120,6 +120,8 @@ public sealed class SystemTrayStatus
     public bool IsNetworkConnected { get; init; }
     public bool IsEthernet { get; init; }
     public bool IsWifi { get; init; }
+    public bool ShowEthernetIcon => !IsWifi;
+    public bool ShowWifiIcon => IsWifi;
     public string NetworkName { get; init; } = string.Empty;
     public string NetworkStatusSummary { get; init; } = "Conectado";
 

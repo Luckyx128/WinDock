@@ -1,4 +1,4 @@
-<Window x:Class="WinDock.Views.TaskbarWindow"
+﻿<Window x:Class="WinDock.Views.TaskbarWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:WinDock.ViewModels"
@@ -94,7 +94,10 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Margin" Value="1,0" />
+            <Setter Property="Margin" Value="3,2" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="Margin" Value="3,2" />
+            <Setter Property="Padding" Value="2" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -176,6 +179,8 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Margin" Value="3,2" />
+            <Setter Property="Padding" Value="2" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -245,6 +250,41 @@
             </Setter>
         </Style>
 
+        <!-- Tray Overflow Chevron Button Style (^) -->
+        <Style x:Key="TrayOverflowButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="TrayBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="2">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TrayBorder" Property="Background" Value="{DynamicResource PillHoverBrush}" />
+                                <Setter TargetName="TrayBorder" Property="BorderBrush" Value="{DynamicResource BarBorderBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="TrayBorder" Property="Background" Value="{DynamicResource PillActiveBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Quick Settings Cluster Item Button Style -->
         <Style x:Key="QuickSettingsItemButtonStyle" TargetType="Button">
             <Setter Property="Width" Value="24" />
@@ -285,7 +325,10 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Margin" Value="1,0" />
+            <Setter Property="Margin" Value="3,2" />
+            <Setter Property="Padding" Value="2" />
+            <Setter Property="Margin" Value="3,2" />
+            <Setter Property="Padding" Value="2" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -429,6 +472,8 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Margin" Value="3,2" />
+            <Setter Property="Padding" Value="2" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Template">
@@ -2125,21 +2170,47 @@
     </Window.Resources>
 
     <!-- Main Edge Dock Bar Container -->
-    <Border Background="{DynamicResource BarBackgroundBrush}"
+    <Border x:Name="MainDockBorder"
+            Background="{DynamicResource BarBackgroundBrush}"
             BorderBrush="{DynamicResource BarBorderBrush}"
-            BorderThickness="0,1,0,0">
+            BorderThickness="0,1,0,0"
+            ClipToBounds="False">
+        <Border.ContextMenu>
+            <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
+                <MenuItem Header="⚙ Personalizar WinDock / Configurações"
+                          Command="{Binding OpenCustomizationCommand}"
+                          Style="{StaticResource DarkMenuItemStyle}"
+                          FontWeight="SemiBold" />
+                <MenuItem Header="🖥 Alternar Widgets no Desktop"
+                          Command="{Binding ToggleWidgetsCommand}"
+                          Style="{StaticResource DarkMenuItemStyle}" />
+                <MenuItem Header="{Binding NativeTaskbarStatusText, FallbackValue='🪟 Ocultar/Exibir Barra do Windows'}"
+                          Command="{Binding ToggleNativeTaskbarCommand}"
+                          Style="{StaticResource DarkMenuItemStyle}" />
+                <MenuItem Header="🔄 Sincronizar / Atualizar"
+                          Command="{Binding RefreshAllCommand}"
+                          Style="{StaticResource DarkMenuItemStyle}" />
+                <Separator Background="{DynamicResource BarBorderBrush}" Margin="2,3" />
+                <MenuItem Header="❌ Fechar WinDock"
+                          Command="{Binding ExitAppCommand}"
+                          Style="{StaticResource DarkMenuItemStyle}"
+                          Foreground="{DynamicResource AccentRedBrush}" />
+            </ContextMenu>
+        </Border.ContextMenu>
         
-        <Grid>
+        <Grid ClipToBounds="False">
             <!-- Center-Aligned Scrollable Unified Dock Strip -->
             <ScrollViewer x:Name="DockScrollViewer"
                       HorizontalScrollBarVisibility="Hidden"
                       VerticalScrollBarVisibility="Disabled"
                       PreviewMouseWheel="DockScrollViewer_PreviewMouseWheel"
                       HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
+                      VerticalAlignment="Center"
+                      ClipToBounds="False"
+                      Padding="4,2">
             
             <!-- ONE CLEAN UNIFIED HORIZONTAL STRIP: Open Apps + Pinned Apps (1x1 items) + One subtle gear button at the end! -->
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="6,2" ClipToBounds="False">
                 <StackPanel.LayoutTransform>
                     <ScaleTransform ScaleX="{Binding DockScale}" ScaleY="{Binding DockScale}" />
                 </StackPanel.LayoutTransform>
@@ -2150,7 +2221,7 @@
                         Command="{Binding OpenStartMenuCommand}"
                         Visibility="{Binding ShowStartButton, Converter={StaticResource BoolToVis}}"
                         ToolTip="Iniciar (Windows 11)"
-                        Margin="0,0,3,0">
+                        Margin="3,2">
                     <Grid Width="20" Height="20">
                         <!-- Windows 11 Fluent 4-Square Vector Logo -->
                         <Path Data="M2 2h7.2v7.2H2z M10.8 2H18v7.2h-7.2z M2 10.8h7.2V18H2z M10.8 10.8H18V18h-7.2z"
@@ -2170,32 +2241,34 @@
 
                 <!-- Requirement (Sprint 6): UNIFIED INTERLEAVED DOCK STRIP (Apps + Widgets freely mixed!) -->
                 <!-- Combines open apps, pinned apps, and modular dock widgets in one freely reorderable horizontal strip -->
-                <ItemsControl x:Name="UnifiedDockItemsControl" ItemsSource="{Binding DockStripItems}">
+                <ItemsControl x:Name="UnifiedDockItemsControl" ItemsSource="{Binding DockStripItems}" ClipToBounds="False">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="False" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
-                <!-- Separador sutil antes do botão de engrenagem -->
-                <Border Width="1" Height="18" Background="{DynamicResource BarBorderBrush}" Margin="4,0" Opacity="0.4" />
-
-                <!-- Requirement (1): One subtle gear icon button at the end to open CustomizationWindow -->
-                <Button Style="{StaticResource DockIconSlotStyle}"
-                        Command="{Binding OpenCustomizationCommand}"
-                        ToolTip="Personalizar Dock &amp; Configurações (⚙)">
-                    <Path Data="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
-                          Width="15" Height="15"
-                          Stretch="Uniform"
-                          Fill="{DynamicResource TextSecondaryBrush}" />
-                </Button>
-
-                <!-- Separador sutil antes do cluster Quick Settings -->
+                <!-- Separador sutil antes da bandeja e Quick Settings -->
                 <Border Width="1" Height="18" Background="{DynamicResource BarBorderBrush}" Margin="4,0,2,0" Opacity="0.4"
                         Visibility="{Binding ShowSystemTrayCluster, Converter={StaticResource BoolToVis}}" />
 
-                <!-- Requirement (3): Quick Settings Cluster na extrema direita da barra (Bateria, Rede, Som) -->
+                <!-- Setinha da bandeja (Chevron para cima ^) -->
+                <Button Style="{StaticResource TrayOverflowButtonStyle}"
+                        Command="{Binding OpenTrayOverflowCommand}"
+                        ToolTip="Mostrar ícones ocultos (Bandeja do Sistema)"
+                        Visibility="{Binding ShowSystemTrayCluster, Converter={StaticResource BoolToVis}}">
+                    <Path Data="M4 11l6-6 6 6"
+                          Stroke="{DynamicResource TextSecondaryBrush}"
+                          StrokeThickness="1.5"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"
+                          Stretch="Uniform"
+                          Width="10" Height="7" />
+                </Button>
+
+                <!-- Quick Settings Cluster na extrema direita da barra (Bateria, Rede, Som) -->
                 <Border x:Name="QuickSettingsCluster"
                         Height="34"
                         CornerRadius="9"
@@ -2224,31 +2297,54 @@
                     </Border.Style>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- 1. Bateria (Status de Carga / AC) -->
+                        <!-- 1. Bateria (Status de Carga / AC) - Oculto em computadores desktop sem bateria -->
                         <Button Style="{StaticResource QuickSettingsItemButtonStyle}"
                                 Command="{Binding OpenQuickSettingsCommand}"
-                                ToolTip="Status da Bateria: Carregado / Energia AC (Clique para abrir Configurações Rápidas)">
+                                ToolTip="{Binding BatteryStatusSummary, FallbackValue='Status da Bateria (Clique para abrir Configurações Rápidas)'}"
+                                Visibility="{Binding HasBattery, Converter={StaticResource BoolToVis}}">
                             <Path Data="M16 8h-1V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-2h1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1zm-3 8H4V6h9v10z"
                                   Stretch="Uniform" Width="13" Height="11"
                                   Fill="{DynamicResource TextSecondaryBrush}" />
                         </Button>
 
-                        <!-- 2. Rede (Wi-Fi / Ethernet Conectado) -->
+                        <!-- 2. Rede (Alterna dinamicamente entre Ethernet e Wi-Fi) -->
                         <Button Style="{StaticResource QuickSettingsItemButtonStyle}"
                                 Command="{Binding OpenNetworkSettingsCommand}"
-                                ToolTip="Rede &amp; Internet: Conexão ativa (Clique para abrir Configurações de Rede)">
-                            <Path Data="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4zm0 4c3.34 0 6.39 1.25 8.74 3.31L12 19.9 3.26 11.31A13.4 13.4 0 0 1 12 8z"
-                                  Stretch="Uniform" Width="13" Height="11"
-                                  Fill="{DynamicResource AccentCyanBrush}" />
+                                ToolTip="{Binding NetworkStatusSummary, FallbackValue='Rede &amp; Internet: Conexão ativa (Clique para abrir Configurações)'}">
+                            <Grid Width="16" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Ícone Ethernet (Monitor com conector RJ-45 conforme print do Windows 11) -->
+                                <Path Data="M2 2.5C2 1.67 2.67 1 3.5 1h9c.83 0 1.5.67 1.5 1.5v6.5c0 .83-.67 1.5-1.5 1.5H9v1.5h1.5a.75.75 0 0 1 0 1.5H5.5a.75.75 0 0 1 0-1.5H7V10.5H3.5C2.67 10.5 2 9.83 2 9V2.5zm1.5-.25a.25.25 0 0 0-.25.25v6.5c0 .14.11.25.25.25h9a.25.25 0 0 0 .25-.25V2.5a.25.25 0 0 0-.25-.25h-9z"
+                                      Fill="{DynamicResource AccentCyanBrush}"
+                                      Stretch="Uniform"
+                                      Width="14" Height="12"
+                                      Visibility="{Binding ShowEthernetIcon, Converter={StaticResource BoolToVis}}" />
+                                <!-- Ícone Wi-Fi -->
+                                <Path Data="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98A16.88 16.88 0 0 0 12 4zm0 4c3.34 0 6.39 1.25 8.74 3.31L12 19.9 3.26 11.31A13.4 13.4 0 0 1 12 8z"
+                                      Fill="{DynamicResource AccentCyanBrush}"
+                                      Stretch="Uniform"
+                                      Width="13" Height="11"
+                                      Visibility="{Binding ShowWifiIcon, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
                         </Button>
 
-                        <!-- 3. Som (Alto-falante / Áudio) -->
+                        <!-- 3. Som (Alto-falante nativo do Windows 11 com ondas sonoras nítidas sem corte) -->
                         <Button Style="{StaticResource QuickSettingsItemButtonStyle}"
                                 Command="{Binding OpenVolumeMixerCommand}"
-                                ToolTip="Áudio: Mixer de Volume &amp; Dispositivos de Som (Clique para abrir Mixer de Volume)">
-                            <Path Data="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
-                                  Stretch="Uniform" Width="13" Height="11"
-                                  Fill="{DynamicResource TextSecondaryBrush}" />
+                                ToolTip="{Binding VolumeStatusSummary, FallbackValue='Áudio: Mixer de Volume (Clique para abrir)'}">
+                            <Grid Width="16" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Alto-falante Normal com Ondas Nítidas -->
+                                <Path Data="M11 5L6 9H2v6h4l5 4V5zm4.54 3.46l-1.06 1.06a3.5 3.5 0 0 1 0 4.95l1.06 1.06a5 5 0 0 0 0-7.07zm3.53-3.53l-1.06 1.06a8.5 8.5 0 0 1 0 12.02l1.06 1.06a10 10 0 0 0 0-14.14z"
+                                      Fill="{DynamicResource TextSecondaryBrush}"
+                                      Stretch="Uniform"
+                                      Width="14" Height="13"
+                                      Visibility="{Binding IsNotMasterMuted, Converter={StaticResource BoolToVis}}" />
+                                <!-- Alto-falante Mutado -->
+                                <Path Data="M11 5L6 9H2v6h4l5 4V5zm6.7 3.3l-1.4-1.4-2.3 2.3-2.3-2.3-1.4 1.4 2.3 2.3-2.3 2.3 1.4 1.4 2.3-2.3 2.3 2.3 1.4-1.4-2.3-2.3 2.3-2.3z"
+                                      Fill="{DynamicResource AccentRedBrush}"
+                                      Stretch="Uniform"
+                                      Width="14" Height="13"
+                                      Visibility="{Binding IsMasterMuted, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
                         </Button>
                     </StackPanel>
                 </Border>

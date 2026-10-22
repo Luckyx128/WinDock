@@ -330,11 +330,13 @@ public sealed class SystemStatusService : ISystemStatusService
             isCharging = power.PowerLineStatus == PowerLineStatus.Online;
 
             float life = power.BatteryLifePercent;
-            hasBattery = !power.BatteryChargeStatus.HasFlag(BatteryChargeStatus.NoSystemBattery) && life >= 0f && life <= 1.0f;
+            bool noBattery = power.BatteryChargeStatus.HasFlag(BatteryChargeStatus.NoSystemBattery)
+                || life < 0f || life > 1.0f || (int)life == 255;
+            hasBattery = !noBattery;
 
             if (hasBattery)
             {
-                batteryPercent = (int)Math.Round(life * 100);
+                batteryPercent = Math.Clamp((int)Math.Round(life * 100), 0, 100);
                 batterySummary = isCharging
                     ? $"Carregando ({batteryPercent}%)"
                     : $"{batteryPercent}% restante";

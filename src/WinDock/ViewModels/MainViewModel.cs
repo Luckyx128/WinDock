@@ -502,6 +502,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly IAiUsageService _aiUsageService;
     private readonly IDiscordStatusService _discordStatusService;
     private readonly IDockSettingsService _dockSettingsService;
+    private readonly ISystemStatusService _systemStatusService;
 
     private readonly DispatcherTimer _fastTimer;
     private readonly DispatcherTimer _telemetryTimer;
@@ -521,6 +522,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private bool _isFullscreenActive = false;
     private bool _showStartButton = true;
     private bool _showSystemTrayCluster = true;
+    private SystemTrayStatus _systemTrayStatus = new();
 
     private string _currentTimeText = DateTime.Now.ToString("HH:mm");
     private string _currentSecondsText = DateTime.Now.ToString("ss");
@@ -655,6 +657,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand OpenNetworkSettingsCommand { get; }
     public ICommand ToggleStartButtonCommand { get; }
     public ICommand ToggleSystemTrayClusterCommand { get; }
+    public ICommand OpenTrayOverflowCommand { get; }
 
     public ICommand AddCustomShortcutCommand { get; }
     public ICommand RemoveShortcutCommand { get; }
@@ -675,7 +678,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ISteamIntegrationService steamIntegrationService,
         IAiUsageService aiUsageService,
         IDiscordStatusService discordStatusService,
-        IDockSettingsService? dockSettingsService = null)
+        IDockSettingsService? dockSettingsService = null,
+        ISystemStatusService? systemStatusService = null)
     {
         _appBarService = appBarService;
         _nativeTaskbarService = nativeTaskbarService;
@@ -686,6 +690,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _aiUsageService = aiUsageService;
         _discordStatusService = discordStatusService;
         _dockSettingsService = dockSettingsService ?? new DockSettingsService();
+        _systemStatusService = systemStatusService ?? new SystemStatusService();
+
+        try
+        {
+            _systemTrayStatus = _systemStatusService.GetSystemTrayStatus();
+        }
+        catch
+        {
+            _systemTrayStatus = new SystemTrayStatus();
+        }
 
         // Base Commands
         WindowClickCommand = new RelayCommand(ExecuteWindowClick);
@@ -756,6 +770,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OpenNetworkSettingsCommand = new RelayCommand(ExecuteOpenNetworkSettings);
         ToggleStartButtonCommand = new RelayCommand(ExecuteToggleStartButton);
         ToggleSystemTrayClusterCommand = new RelayCommand(ExecuteToggleSystemTrayCluster);
+        OpenTrayOverflowCommand = new RelayCommand(ExecuteOpenTrayOverflow);
 
         // Customization Commands
         AddCustomShortcutCommand = new RelayCommand(ExecuteAddCustomShortcut);
@@ -1799,6 +1814,49 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public bool DiscordIsDeafened => DiscordStatus.IsDeafened;
     public string DiscordMuteTooltip => DiscordStatus.IsMuted ? "Microfone Mutado (Clique para Desmutar)" : "Microfone Ativo (Clique para Mutar)";
     public string DiscordDeafenTooltip => DiscordStatus.IsDeafened ? "Áudio Ensurdecido (Clique para Ativar)" : "Áudio Ativo (Clique para Ensurdecer)";
+
+    public SystemTrayStatus SystemTrayStatus
+    {
+        get => _systemTrayStatus;
+        private set
+        {
+            _systemTrayStatus = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(HasBattery));
+            OnPropertyChanged(nameof(IsEthernet));
+            OnPropertyChanged(nameof(IsWifi));
+            OnPropertyChanged(nameof(ShowEthernetIcon));
+            OnPropertyChanged(nameof(ShowWifiIcon));
+            OnPropertyChanged(nameof(IsNetworkConnected));
+            OnPropertyChanged(nameof(NetworkName));
+            OnPropertyChanged(nameof(NetworkStatusSummary));
+            OnPropertyChanged(nameof(BatteryPercent));
+            OnPropertyChanged(nameof(IsBatteryCharging));
+            OnPropertyChanged(nameof(BatteryStatusSummary));
+            OnPropertyChanged(nameof(MasterVolumePercent));
+            OnPropertyChanged(nameof(IsMasterMuted));
+            OnPropertyChanged(nameof(IsNotMasterMuted));
+            OnPropertyChanged(nameof(VolumeStatusSummary));
+        }
+    }
+
+    public SystemTrayStatus SystemTray => SystemTrayStatus;
+
+    public bool HasBattery => _systemTrayStatus.HasBattery;
+    public bool IsEthernet => _systemTrayStatus.IsEthernet;
+    public bool IsWifi => _systemTrayStatus.IsWifi;
+    public bool ShowEthernetIcon => !_systemTrayStatus.IsWifi;
+    public bool ShowWifiIcon => _systemTrayStatus.IsWifi;
+    public bool IsNetworkConnected => _systemTrayStatus.IsNetworkConnected;
+    public string NetworkName => _systemTrayStatus.NetworkName;
+    public string NetworkStatusSummary => _systemTrayStatus.NetworkStatusSummary;
+    public int BatteryPercent => _systemTrayStatus.BatteryPercent;
+    public bool IsBatteryCharging => _systemTrayStatus.IsCharging;
+    public string BatteryStatusSummary => _systemTrayStatus.BatteryStatusSummary;
+    public int MasterVolumePercent => _systemTrayStatus.MasterVolumePercent;
+    public bool IsMasterMuted => _systemTrayStatus.IsMasterMuted;
+    public bool IsNotMasterMuted => !_systemTrayStatus.IsMasterMuted;
+    public string VolumeStatusSummary => _systemTrayStatus.VolumeStatusSummary;
 
     public ThemePreset CurrentTheme
     {
@@ -3049,6 +3107,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         Win32Interop.OpenNetworkSettings();
     }
 
+    private static void ExecuteOpenTrayOverflow()
+    {
+        Win32Interop.OpenTrayOverflow();
+    }
+
     private void ExecuteToggleStartButton()
     {
         ShowStartButton = !ShowStartButton;
@@ -3102,7 +3165,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 try { discord = _discordStatusService.GetStatus(); }
                 catch { discord = new DiscordStatus(); }
 
-                return (hw, media, steam, ai, discord);
+                SystemTrayStatus tray;
+                try { tray = _systemStatusService.GetSystemTrayStatus(); }
+                catch { tray = new SystemTrayStatus(); }
+
+                return (hw, media, steam, ai, discord, tray);
             });
 
             if (_isDisposed)
@@ -3115,6 +3182,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             UpdateSteamState(snapshot.steam);
             UpdateAiState(snapshot.ai);
             DiscordStatus = snapshot.discord;
+            SystemTrayStatus = snapshot.tray;
             OnPropertyChanged(nameof(IsNativeTaskbarHidden));
             OnPropertyChanged(nameof(NativeTaskbarStatusText));
         }

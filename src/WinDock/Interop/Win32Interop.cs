@@ -60,6 +60,10 @@ public static class Win32Interop
     public const byte VK_RWIN = 0x5C;
     public const byte VK_A = 0x41;
     public const byte VK_N = 0x4E;
+    public const byte VK_B = 0x42;
+    public const byte VK_RETURN = 0x0D;
+    public const byte VK_SPACE = 0x20;
+    public const byte VK_ESCAPE = 0x1B;
 
     // Extended Window Styles
     public const int WS_EX_TOOLWINDOW = 0x00000080;
@@ -487,4 +491,47 @@ public static class Win32Interop
             // Ignore shell launch failure
         }
     }
+
+    /// <summary>
+    /// Opens or toggles the Windows system tray overflow flyout (hidden notification icons).
+    /// Simulates the native Windows accessibility shortcut (Win + B, then Enter), or interacts with 'NotifyIconOverflowWindow'.
+    /// </summary>
+    public static void ToggleTrayOverflow()
+    {
+        try
+        {
+            IntPtr overflowWnd = FindWindow("NotifyIconOverflowWindow", null);
+            if (overflowWnd == IntPtr.Zero)
+            {
+                overflowWnd = FindWindow("TopLevelWindowForOverflowXamlIsland", null);
+            }
+
+            if (overflowWnd != IntPtr.Zero && IsWindowVisible(overflowWnd))
+            {
+                // If already open, dismiss via Escape
+                keybd_event(VK_ESCAPE, 0, 0, UIntPtr.Zero);
+                keybd_event(VK_ESCAPE, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                return;
+            }
+
+            // Native Windows shortcut: Win + B focuses notification area chevron, then Enter activates it
+            keybd_event(VK_LWIN, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_B, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_B, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            Thread.Sleep(35);
+
+            keybd_event(VK_RETURN, 0, 0, UIntPtr.Zero);
+            keybd_event(VK_RETURN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
+    /// Opens or toggles the system tray overflow (alias for ToggleTrayOverflow).
+    /// </summary>
+    public static void OpenTrayOverflow() => ToggleTrayOverflow();
 }
