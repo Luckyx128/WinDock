@@ -2505,7 +2505,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             _lastClickedHwnd = item.WindowHandle;
             _lastClickTicks = now;
 
-            if (item.IsFocused)
+            IntPtr fg = Win32Interop.GetForegroundWindow();
+            if (fg == item.WindowHandle && !Win32Interop.IsIconic(item.WindowHandle))
             {
                 SafeInvoke(() => _windowTrackerService.MinimizeWindow(item.WindowHandle));
             }

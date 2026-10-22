@@ -41,6 +41,8 @@ public static class Win32Interop
     // Foreground Activation Constants
     public const int ASFW_ANY = -1;
     public const uint LSFW_UNLOCK = 2;
+    public const byte VK_MENU = 0x12;
+    public const uint KEYEVENTF_KEYUP = 0x0002;
 
     // Extended Window Styles
     public const int WS_EX_TOOLWINDOW = 0x00000080;
@@ -197,6 +199,9 @@ public static class Win32Interop
 
     [DllImport("user32.dll")]
     public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);

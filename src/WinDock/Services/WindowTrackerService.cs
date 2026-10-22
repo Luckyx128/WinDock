@@ -120,7 +120,7 @@ public sealed class WindowTrackerService : IWindowTrackerService
         }
 
         IntPtr foregroundHwnd = Win32Interop.GetForegroundWindow();
-        if (foregroundHwnd == handle)
+        if (foregroundHwnd == handle && !Win32Interop.IsIconic(handle))
         {
             MinimizeWindow(handle);
         }
@@ -195,16 +195,25 @@ public sealed class WindowTrackerService : IWindowTrackerService
                 Win32Interop.ShowWindowAsync(handle, Win32Interop.SW_SHOW);
             }
 
-            // 2. Bring window to the top of Z-order
+            // 2. Bring window to the top of Z-order using HWND_TOPMOST -> HWND_NOTOPMOST
             Win32Interop.BringWindowToTop(handle);
 
             Win32Interop.SetWindowPos(
                 handle,
-                Win32Interop.HWND_TOP,
+                Win32Interop.HWND_TOPMOST,
                 0, 0, 0, 0,
                 Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_SHOWWINDOW);
 
-            // 3. Force foreground focus through standard and shell switch APIs
+            Win32Interop.SetWindowPos(
+                handle,
+                Win32Interop.HWND_NOTOPMOST,
+                0, 0, 0, 0,
+                Win32Interop.SWP_NOMOVE | Win32Interop.SWP_NOSIZE | Win32Interop.SWP_SHOWWINDOW);
+
+            // 3. Unlock Foreground Lock via simulated ALT keystroke and force focus
+            Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, 0, UIntPtr.Zero);
+            Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, Win32Interop.KEYEVENTF_KEYUP, UIntPtr.Zero);
+
             Win32Interop.SetForegroundWindow(handle);
             Win32Interop.SwitchToThisWindow(handle, true);
         }
@@ -213,6 +222,9 @@ public sealed class WindowTrackerService : IWindowTrackerService
             // Fallback attempt
             try
             {
+                Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, 0, UIntPtr.Zero);
+                Win32Interop.keybd_event(Win32Interop.VK_MENU, 0, Win32Interop.KEYEVENTF_KEYUP, UIntPtr.Zero);
+                Win32Interop.SetForegroundWindow(handle);
                 Win32Interop.SwitchToThisWindow(handle, true);
             }
             catch { }
