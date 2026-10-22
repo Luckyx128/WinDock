@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using WinDock.Models;
 using WinDock.Services;
@@ -9,6 +11,26 @@ namespace WinDock;
 
 public partial class App : System.Windows.Application
 {
+    private static readonly string CrashLogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "WinDock",
+        "crash.log");
+
+    public static void LogDiagnostic(string message)
+    {
+        try
+        {
+            string? dir = Path.GetDirectoryName(CrashLogPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}{Environment.NewLine}";
+            File.AppendAllText(CrashLogPath, entry);
+        }
+        catch { }
+    }
+
     private INativeTaskbarService? _nativeTaskbarService;
     private IAppBarService? _appBarService;
     private TaskbarWindow? _taskbarWindow;
@@ -19,6 +41,26 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        LogDiagnostic("[OnStartup] WinDock starting up.");
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            LogDiagnostic($"[AppDomain.UnhandledException] IsTerminating={args.IsTerminating}: {args.ExceptionObject}");
+        };
+
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            LogDiagnostic($"[TaskScheduler.UnobservedTaskException] {args.Exception}");
+            args.SetObserved();
+        };
+
+        DispatcherUnhandledException += (_, args) =>
+        {
+            LogDiagnostic($"[DispatcherUnhandledException] {args.Exception}");
+            SafeRestoreTaskbar();
+            args.Handled = true;
+        };
 
         _nativeTaskbarService = new NativeTaskbarService();
         _appBarService = new AppBarService();
@@ -33,12 +75,6 @@ public partial class App : System.Windows.Application
 
         // Ensure native taskbar is always restored if process exits unexpectedly
         AppDomain.CurrentDomain.ProcessExit += (_, _) => SafeRestoreTaskbar();
-
-        DispatcherUnhandledException += (_, args) =>
-        {
-            SafeRestoreTaskbar();
-            args.Handled = true;
-        };
 
         // Automatically hide the native Windows taskbar on startup so WinDock takes its exact place
         try
@@ -98,6 +134,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        LogDiagnostic("[OnExit] ExitCode: " + e.ApplicationExitCode);
         SafeRestoreTaskbar();
         _mainViewModel?.Dispose();
         base.OnExit(e);
@@ -105,6 +142,7 @@ public partial class App : System.Windows.Application
 
     private void SafeRestoreTaskbar()
     {
+        LogDiagnostic("[SafeRestoreTaskbar] Stack: " + Environment.StackTrace);
         try
         {
             if (_taskbarWindow != null && _appBarService != null)
